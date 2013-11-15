@@ -970,7 +970,7 @@ tIBResult IBGet(tIBInfo *pInfo, void *pBuffer, int nMaxBufferSize)
 
 			   char str[256];
 
-			   if ((msgHeader.Attribute & MSG_READ) && forUs == 1) {
+			   if (!(msgHeader.Attribute & MSG_READ) && forUs == 1) {
 				   
 					/* Decode message text, placing information in buffer */
 				   pszText = (char *)malloc(msgHeader.TxtLen + 1);
