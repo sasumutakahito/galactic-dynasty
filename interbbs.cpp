@@ -678,25 +678,25 @@ DWORD GetFirstUnusedMsgNum(char *pszMessageDir)
 #else
   glob_t globbuf;
   glob(szFileName, 0, NULL, &globbuf);
-  MakeFilename(pInfo->szNetmailDir, "*.MSG", szFileName);
+  MakeFilename(pszMessageDir, "*.MSG", szFileName);
   glob(szFileName, GLOB_APPEND, NULL, &globbuf);
 
-  MakeFilename(pInfo->szNetmailDir, "*.Msg", szFileName);
+  MakeFilename(pszMessageDir, "*.Msg", szFileName);
   glob(szFileName, GLOB_APPEND, NULL, &globbuf);
 
-  MakeFilename(pInfo->szNetmailDir, "*.mSg", szFileName);
+  MakeFilename(pszMessageDir, "*.mSg", szFileName);
   glob(szFileName, GLOB_APPEND, NULL, &globbuf);
 
-  MakeFilename(pInfo->szNetmailDir, "*.msG", szFileName);
+  MakeFilename(pszMessageDir, "*.msG", szFileName);
   glob(szFileName, GLOB_APPEND, NULL, &globbuf);
 
-  MakeFilename(pInfo->szNetmailDir, "*.MSg", szFileName);
+  MakeFilename(pszMessageDir, "*.MSg", szFileName);
   glob(szFileName, GLOB_APPEND, NULL, &globbuf);
 
-  MakeFilename(pInfo->szNetmailDir, "*.MsG", szFileName);
+  MakeFilename(pszMessageDir, "*.MsG", szFileName);
   glob(szFileName, GLOB_APPEND, NULL, &globbuf);
 
-  MakeFilename(pInfo->szNetmailDir, "*.mSG", szFileName);
+  MakeFilename(pszMessageDir, "*.mSG", szFileName);
   glob(szFileName, GLOB_APPEND, NULL, &globbuf);
 
   for (i=0;i<globbuf.gl_pathc;i++) {
