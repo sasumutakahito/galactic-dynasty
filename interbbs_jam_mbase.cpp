@@ -54,34 +54,19 @@
 #if _MSC_VER
 # include <sys/locking.h>
 # include <io.h>
-#endif
-
-#if defined( __UNIX__ )
-# if HAVE_SYS_FILE_H
+#else
 #  include <sys/file.h>
-# endif
-# if HAVE_UNISTD_H
 #  include <unistd.h>
-# endif
-# ifdef HAVE_FCNTL_H
 #  include <fcntl.h>
-# endif
-# ifdef USE_LOCKF
 #  include <sys/file.h>
-# endif
 #endif
 
 #define OS_ERROR_OFFSET 10000
 
-#if defined( __OS2__ )
-# define JAM_Sleep( _x_ )	DosSleep( (_x_)*1000 )
-#endif
 
 #if _MSC_VER
 # define JAM_Sleep(x) _sleep((x)*1000)
-#endif
-
-#if defined( __UNIX__ )
+#else
 # define JAM_Sleep(x) sleep(x)
 #endif
 
@@ -450,41 +435,7 @@ int JAM_FindUser( s_JamBase*	Base_PS,
  **/
 int jam_Lock( s_JamBase* Base_PS, int DoLock_I )
 {
-#if defined(__OS2__)
-    FILELOCK Area_S;
-    APIRET   Status_I;
-    ULONG    Timeout_I = 0;
-    int      Handle_I;
-
-    Handle_I = fileno( Base_PS->HdrFile_PS );
-    if ( Handle_I == -1 ) {
-	Base_PS->Errno_I = errno;
-	return JAM_IO_ERROR;
-    }
-
-    Area_S.lOffset = 0;
-    Area_S.lRange  = 1;
-
-    if ( DoLock_I )
-	Status_I = DosSetFileLocks( Handle_I, NULL, &Area_S, Timeout_I, 0 );
-    else
-	Status_I = DosSetFileLocks( Handle_I, &Area_S, NULL, Timeout_I, 0 );
-
-    if ( Status_I ) {
-	if ( 232 == Status_I )
-	    return JAM_LOCK_FAILED;
-
-	Base_PS->Errno_I = Status_I + OS_ERROR_OFFSET;
-	return JAM_IO_ERROR;
-    }
-
-    if ( DoLock_I )
-	Base_PS->Locked_I = 1;
-    else
-	Base_PS->Locked_I = 0;
-
-    return 0;
-#elif _MSC_VER
+#if _MSC_VER
     int      Handle_I,Status_I;
 
     fseek(Base_PS->HdrFile_PS,0,SEEK_SET); /* Lock from start of file */
@@ -509,7 +460,7 @@ int jam_Lock( s_JamBase* Base_PS, int DoLock_I )
 	Base_PS->Locked_I = 0;
 
     return 0;
-#elif defined(__UNIX__)
+#else 
     int      Handle_I,Status_I;
 
     fseek(Base_PS->HdrFile_PS,0,SEEK_SET); /* Lock from start of file */
@@ -520,24 +471,8 @@ int jam_Lock( s_JamBase* Base_PS, int DoLock_I )
 	return JAM_IO_ERROR;
     }
 
-#ifdef USE_LOCKF
     if(DoLock_I) Status_I = lockf(Handle_I, F_TLOCK, 1);
     else         Status_I = lockf(Handle_I, F_ULOCK, 1);
-#else
-    {
-	struct flock fl;
-
-	if(DoLock_I) fl.l_type=F_WRLCK;
-	else         fl.l_type=F_UNLCK;
-
-	fl.l_whence=SEEK_SET;
-	fl.l_start=0;
-	fl.l_len=1;
-	fl.l_pid=getpid();
-
-	Status_I=fcntl(Handle_I,F_SETLK,&fl);
-    }
-#endif
     if ( Status_I ) {
 	Base_PS->Errno_I = errno;
 	return JAM_LOCK_FAILED;
@@ -549,9 +484,8 @@ int jam_Lock( s_JamBase* Base_PS, int DoLock_I )
 	Base_PS->Locked_I = 0;
 
     return 0;
-#else
-#error Unsupported platform
 #endif
+  
 }
 /** }}}
  **

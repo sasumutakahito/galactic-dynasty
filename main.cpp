@@ -1,9 +1,10 @@
-#include <opendoor.h>
+#include <OpenDoor.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include "sqlite3.h"
+#include <sqlite3.h>
+#include <ctype.h>
 #include "interbbs.h"
 
 #if _MSC_VER
@@ -1809,8 +1810,13 @@ void game_loop(player_t *player)
 	
 }
 
+#if _MSC_VER
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,LPSTR lpszCmdLine,int nCmdShow)
 {
+#else
+int main(int argc, char **argv) 
+{
+#endif
 	player_t *player;
 	char bbsname[256];
 	time_t timenow;
@@ -1828,12 +1834,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,LPSTR lpszCmdLin
 		interBBSMode = 1;
 	}
 
+#if _MSC_VER
 	if (strcasecmp(lpszCmdLine, "maintenance") == 0) {
 		perform_maintenance();
 		return 0;
 	}
-
 	od_parse_cmd_line(lpszCmdLine);
+#else
+	if (argc > 1 && strcasecmp(argv[1], "maintenance") == 0) {
+		perform_maintenance();
+		return 0;
+	}
+
+	od_parse_cmd_line(argc, argv);
+#endif
 	od_send_file("logo.ans");
 	od_get_key(TRUE);
 

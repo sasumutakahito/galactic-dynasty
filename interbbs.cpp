@@ -4,21 +4,36 @@
 #include <time.h>
 #include <stdlib.h>
 #include <stdio.h>
+#if _MSC_VER
 #include <io.h>
-#include <dos.h>
-#include <fcntl.h>
-#include <sys\stat.h>
 #include <Windows.h>
+#include <dos.h>
+#include <sys\stat.h>
+#else
+#include <sys/stat.h>
+#include <sys/file.h>
+#include <unistd.h>
+#include <glob.h>
+#endif
+
+#include <fcntl.h>
+
 
 #include "interbbs.h"
 #include "interbbs_jam.h"
+
+#if _MSC_VER
+#define access _access
+#else
+#define stricmp strcasecmp
+#endif
 
 char aszShortMonthName[12][4] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
                                  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 
 tBool DirExists(const char *pszDirName)
    {
-    if( _access( pszDirName, 0 ) == 0 ){
+    if( access( pszDirName, 0 ) == 0 ){
 
         struct stat status;
         stat( pszDirName, &status );
@@ -42,11 +57,17 @@ void MakeFilename(const char *pszPath, const char *pszFilename, char *pszOut)
    strcpy(pszOut, pszPath);
 
    /* Ensure there is a trailing backslash */
+#if _MSC_VER
    if(pszOut[strlen(pszOut) - 1] != '\\')
       {
       strcat(pszOut, "\\");
       }
-
+#else
+   if(pszOut[strlen(pszOut) - 1] != '/')
+      {
+      strcat(pszOut, "/");
+      }
+#endif
    /* Append base filename */
    strcat(pszOut, pszFilename);
    }
@@ -526,12 +547,18 @@ tBool WriteMessage(char *pszMessageDir, DWORD lwMessageNum,
    GetMessageFilename(pszMessageDir, lwMessageNum, szFileName);
 
    /* Open message file */
+#if _MSC_VER   
    hFile = open(szFileName, O_WRONLY|O_BINARY|O_CREAT|OF_SHARE_EXCLUSIVE,
                 S_IREAD|S_IWRITE);
-
+#else
+   hFile = open(szFileName, O_WRONLY|O_CREAT,
+                S_IREAD|S_IWRITE);
+#endif
    /* If open failed, return FALSE */
    if(hFile == -1) return(FALSE);
-
+#if !_MSC_VER
+   flock(hFile, LOCK_EX);
+#endif
    /* Attempt to write header */
    if(write(hFile, pHeader, sizeof(tMessageHeader)) != sizeof(tMessageHeader))
       {
@@ -567,18 +594,26 @@ tBool ReadMessage(char *pszMessageDir, DWORD lwMessageNum,
    char szFileName[PATH_CHARS + FILENAME_CHARS + 2];
    int hFile;
    size_t nTextSize;
-
+   size_t filelen;
+   struct stat st;
    /* Get fully qualified filename of message to read */
    GetMessageFilename(pszMessageDir, lwMessageNum, szFileName);
 
    /* Open message file */
+#if _MSC_VER
    hFile = open(szFileName, O_RDONLY|O_BINARY|OF_SHARE_DENY_WRITE);
-
+#else
+   hFile = open(szFileName, O_RDONLY);
+#endif
    /* If open failed, return FALSE */
    if(hFile == -1) return(FALSE);
+#if !_MSC_VER
+   flock(hFile, LOCK_EX);
+#endif
 
+   stat(szFileName, &st);
    /* Determine size of message body */
-   nTextSize = (size_t)filelength(hFile) - sizeof(tMessageHeader);
+   nTextSize = st.st_size - sizeof(tMessageHeader);
 
    /* Attempt to allocate space for message body, plus character for added */
    /* string terminator.                                                   */
@@ -624,9 +659,10 @@ DWORD GetFirstUnusedMsgNum(char *pszMessageDir)
    DWORD lwCurrentMsgNum;
    char szFileName[PATH_CHARS + FILENAME_CHARS + 2];
    int i;
-
+   
    MakeFilename(pszMessageDir, "*.msg", szFileName);
-
+#if _MSC_VER   
+   
    WIN32_FIND_DATA fd;
    HANDLE h = FindFirstFile((const char*)szFileName, &fd);
 
@@ -639,6 +675,20 @@ DWORD GetFirstUnusedMsgNum(char *pszMessageDir)
             break;
    }
 
+#else
+  glob_t globbuf;
+  glob(szFileName, 0, NULL, &globbuf);
+  
+  for (i=0;i<globbuf.gl_pathc;i++) {
+    if (atoi(basename(globbuf.gl_pathv[i])) > lwHighestMsgNum) {
+      lwHighestMsgNum = atoi(basename(globbuf.gl_pathv[i]));
+    }
+  }
+  
+  globfree(&globbuf);
+  
+#endif
+   
    return(lwHighestMsgNum + 1);
    }
 
@@ -686,7 +736,7 @@ tIBResult IBGet(tIBInfo *pInfo, void *pBuffer, int nMaxBufferSize)
 
 		/* Seach through each message file in the netmail directory, in no */
 		/* particular order.*/
-
+#if _MSC_VER
 		WIN32_FIND_DATA fd;
 		HANDLE h = FindFirstFile((const char*)szFileName, &fd);
 
@@ -763,7 +813,82 @@ tIBResult IBGet(tIBInfo *pInfo, void *pBuffer, int nMaxBufferSize)
       }
 
    /* If no new messages were found */
-		return(eNoMoreMessages);
+  return(eNoMoreMessages);
+#else
+  glob_t globbuf;
+  glob(szFileName, 0, NULL, &globbuf);
+  int i;
+  
+  for (i=0;i<globbuf.gl_pathc;i++) {
+      lwCurrentMsgNum = atol(basename(globbuf.gl_pathv[i]));
+
+				/* If able to read message */
+				if(ReadMessage(pInfo->szNetmailDir, lwCurrentMsgNum, &MessageHeader,
+					&pszText))
+				{
+					
+					/* If message is for us, and hasn't be read yet */
+					if(strcmp(MessageHeader.szToUserName, pInfo->szProgName) == 0
+						&& ThisNode.wZone == MessageHeader.wDestZone
+		               && ThisNode.wNet == MessageHeader.wDestNet
+						&& ThisNode.wNode == MessageHeader.wDestNode
+				       && ThisNode.wPoint == MessageHeader.wDestPoint
+						&& !(MessageHeader.wAttribute & ATTRIB_RECEIVED))
+					{
+						 /* Decode message text, placing information in buffer */
+			   
+						DecodeBuffer(pszText, pBuffer, nMaxBufferSize);
+			   
+						 /* If received messages should be deleted */
+						if(pInfo->bEraseOnReceive)
+						{
+							/* Determine filename of message to erase */
+							GetMessageFilename(pInfo->szNetmailDir, lwCurrentMsgNum,
+										szFileName);
+
+							/* Attempt to erase file */
+							if(unlink(szFileName) == -1)
+							{
+								ToReturn = eGeneralFailure;
+							}
+							else
+							{
+								ToReturn = eSuccess;
+							}
+						}
+
+						/* If received messages should not be deleted */
+						else /* if(!pInfo->bEraseOnReceive) */
+						{
+							/* Mark message as read */
+							MessageHeader.wAttribute |= ATTRIB_RECEIVED;
+							++MessageHeader.wTimesRead;
+
+		                  /* Attempt to rewrite message */
+				          if(!WriteMessage(pInfo->szNetmailDir, lwCurrentMsgNum,
+						   &MessageHeader, pszText))
+							{
+							ToReturn = eGeneralFailure;
+							}
+							else
+							{
+							ToReturn = eSuccess;
+							}
+						}
+
+		               /* Deallocate message text buffer */
+		free(pszText);
+		/* Return appropriate value */
+		globfree(&globbuf);
+               return(ToReturn);
+               }
+            free(pszText);
+            }
+  }
+  
+  globfree(&globbuf);
+  return(eNoMoreMessages);
+#endif
    } else if (pInfo->tNetmailType == 1) {
 		// Jam message type
 	   if (JAM_OpenMB((uchar *)pInfo->szNetmailDir, &jamMsgPtr) != 0) {
