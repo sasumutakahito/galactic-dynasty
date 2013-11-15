@@ -285,6 +285,11 @@ tIBResult IBSend(tIBInfo *pInfo, char *pszDestNode, void *pBuffer,
 		
 		JAM_ClearMsgHeader(&jamHeader);
 		jamHeader.DateWritten = time(NULL);
+		jamHeader.Attribute = MSG_PRIVATE | MSG_LOCAL;
+		if(pInfo->bCrash) jamHeader.Attribute |= MSG_CRASH;
+		if(pInfo->bHold) jamHeader.Attribute |= MSG_HOLD;
+		if(pInfo->bEraseOnSend) jamHeader.Attribute |= MSG_KILLSENT;
+
 		subPacket = JAM_NewSubPacket();
 		if (!subPacket) {
 			return eGeneralFailure;
@@ -965,7 +970,7 @@ tIBResult IBGet(tIBInfo *pInfo, void *pBuffer, int nMaxBufferSize)
 
 			   char str[256];
 
-			   if (msgHeader.DateReceived == 0 && forUs == 1) {
+			   if ((msgHeader.Attribute & MSG_READ) && forUs == 1) {
 				   
 					/* Decode message text, placing information in buffer */
 				   pszText = (char *)malloc(msgHeader.TxtLen + 1);
@@ -990,6 +995,7 @@ tIBResult IBGet(tIBInfo *pInfo, void *pBuffer, int nMaxBufferSize)
 						} else {
 					   /* If received messages should not be deleted */
 							msgHeader.DateReceived = time(NULL);
+							msgHeader.Attribute |= MSG_READ;
 							JAM_LockMB(jamMsgPtr, -1);
 							JAM_ChangeMsgHeader(jamMsgPtr, Msg_I, &msgHeader);
 							JAM_UnlockMB(jamMsgPtr);
