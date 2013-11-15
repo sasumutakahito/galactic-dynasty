@@ -531,7 +531,7 @@ void GetMessageFilename(char *pszMessageDir, DWORD lwMessageNum,
    {
    char szFileName[FILENAME_CHARS + 1];
 
-   sprintf(szFileName, "%ld.msg", lwMessageNum);
+   sprintf(szFileName, "%ld.MSG", lwMessageNum);
    MakeFilename(pszMessageDir, szFileName, pszOut);
    }
 
@@ -678,7 +678,27 @@ DWORD GetFirstUnusedMsgNum(char *pszMessageDir)
 #else
   glob_t globbuf;
   glob(szFileName, 0, NULL, &globbuf);
-  
+  MakeFilename(pInfo->szNetmailDir, "*.MSG", szFileName);
+  glob(szFileName, GLOB_APPEND, NULL, &globbuf);
+
+  MakeFilename(pInfo->szNetmailDir, "*.Msg", szFileName);
+  glob(szFileName, GLOB_APPEND, NULL, &globbuf);
+
+  MakeFilename(pInfo->szNetmailDir, "*.mSg", szFileName);
+  glob(szFileName, GLOB_APPEND, NULL, &globbuf);
+
+  MakeFilename(pInfo->szNetmailDir, "*.msG", szFileName);
+  glob(szFileName, GLOB_APPEND, NULL, &globbuf);
+
+  MakeFilename(pInfo->szNetmailDir, "*.MSg", szFileName);
+  glob(szFileName, GLOB_APPEND, NULL, &globbuf);
+
+  MakeFilename(pInfo->szNetmailDir, "*.MsG", szFileName);
+  glob(szFileName, GLOB_APPEND, NULL, &globbuf);
+
+  MakeFilename(pInfo->szNetmailDir, "*.mSG", szFileName);
+  glob(szFileName, GLOB_APPEND, NULL, &globbuf);
+
   for (i=0;i<globbuf.gl_pathc;i++) {
     if (atoi(basename(globbuf.gl_pathv[i])) > lwHighestMsgNum) {
       lwHighestMsgNum = atoi(basename(globbuf.gl_pathv[i]));
@@ -817,6 +837,30 @@ tIBResult IBGet(tIBInfo *pInfo, void *pBuffer, int nMaxBufferSize)
 #else
   glob_t globbuf;
   glob(szFileName, 0, NULL, &globbuf);
+
+  MakeFilename(pInfo->szNetmailDir, "*.MSG", szFileName);
+  glob(szFileName, GLOB_APPEND, NULL, &globbuf);
+
+  MakeFilename(pInfo->szNetmailDir, "*.Msg", szFileName);
+  glob(szFileName, GLOB_APPEND, NULL, &globbuf);
+
+  MakeFilename(pInfo->szNetmailDir, "*.mSg", szFileName);
+  glob(szFileName, GLOB_APPEND, NULL, &globbuf);
+
+  MakeFilename(pInfo->szNetmailDir, "*.msG", szFileName);
+  glob(szFileName, GLOB_APPEND, NULL, &globbuf);
+
+  MakeFilename(pInfo->szNetmailDir, "*.MSg", szFileName);
+  glob(szFileName, GLOB_APPEND, NULL, &globbuf);
+
+  MakeFilename(pInfo->szNetmailDir, "*.MsG", szFileName);
+  glob(szFileName, GLOB_APPEND, NULL, &globbuf);
+
+  MakeFilename(pInfo->szNetmailDir, "*.mSG", szFileName);
+  glob(szFileName, GLOB_APPEND, NULL, &globbuf);
+
+
+
   int i;
   
   for (i=0;i<globbuf.gl_pathc;i++) {
