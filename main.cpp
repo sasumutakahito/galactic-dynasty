@@ -46,6 +46,7 @@ typedef struct message {
 	int id;
 	char to[17];
 	char from[17];
+	char addr[24];
 	int system;
 	time_t date;
 	int seen;
@@ -54,7 +55,7 @@ typedef struct message {
 
 typedef struct ibbsmsg {
 	int type;
-	char from[23];
+	char from[24];
 	char player_name[17];
 	char victim_name[17];
 	int score;
@@ -64,6 +65,7 @@ typedef struct ibbsmsg {
 	int plunder_credits;
 	int plunder_food;
 	int plunder_people;
+	char message[256];
 	unsigned long created;
 } ibbsmsg_t;
 
@@ -83,7 +85,7 @@ char *select_bbs() {
 		for (i=0;i<InterBBSInfo.nTotalSystems;i++) {
 			od_printf(" (%d) %s\r\n", i+1, InterBBSInfo.paOtherSystem[i].szSystemName);
 		}
-		od_printf(" (0) Cancel Attack\r\n");
+		od_printf(" (0) Cancel\r\n");
 		od_input_str(buffer, 8, '0', '9');
 		i = atoi(buffer);
 		if (i == 0) {
@@ -153,11 +155,11 @@ int select_ibbs_player(char *addr, char *player_name) {
 	sqlite3_close(db);
 
 	while (1) {
-		od_printf("\r\nSelect an empire to attack...\r\n");
+		od_printf("\r\nSelect an empire...\r\n");
 		for (i = 0;i<count;i++) {
 			od_printf(" (%d) %s\r\n", i+1, names[i]);
 		}
-		od_printf(" (0) Cancel Attack\r\n");
+		od_printf(" (0) Cancel\r\n");
 		od_input_str(buffer, 8, '0', '9');
 		i = atoi(buffer);
 		if (i == 0) {
@@ -201,7 +203,7 @@ void send_message(player_t *to, player_t *from, char *body)
 		sqlite3_bind_int(stmt, 4, 0);
 		sqlite3_bind_text(stmt, 5, body, strlen(body) + 1, SQLITE_STATIC);
 	} else {
-		snprintf(sqlbuffer, 256, "INSERT INTO messages (recipient, from, system, date, seen, body) VALUES(?, ?, ?, ?, ?, ?)");
+		snprintf(sqlbuffer, 256, "INSERT INTO messages (recipient, 'from', system, date, seen, body) VALUES(?, ?, ?, ?, ?, ?)");
 		sqlite3_prepare_v2(db, sqlbuffer, strlen(sqlbuffer) + 1, &stmt, NULL);
 		sqlite3_bind_text(stmt, 1, to->gamename, strlen(to->gamename) + 1, SQLITE_STATIC);
 		sqlite3_bind_text(stmt, 2, from->gamename, strlen(from->gamename) + 1, SQLITE_STATIC);
@@ -302,6 +304,110 @@ void unseen_msgs(player_t *player) {
 	if (rc) {
 		// Error opening the database
         printf("Error opening user database: %s\n", sqlite3_errmsg(db));
+        sqlite3_close(db);
+        exit(1);
+    }
+
+	for (i=0;i<msg_count;i++) {
+		snprintf(sqlbuffer, 256, "UPDATE messages SET seen=? WHERE id = ?");
+		sqlite3_prepare_v2(db, sqlbuffer, strlen(sqlbuffer) + 1, &stmt, NULL);
+		sqlite3_bind_int(stmt, 1, msg[i]->seen);
+		sqlite3_bind_int(stmt, 2, msg[i]->id);
+		sqlite3_step(stmt);
+		sqlite3_finalize(stmt);
+	}
+
+	sqlite3_close(db);
+
+	for (i=0;i<msg_count;i++) {
+		free(msg[i]);
+	}
+	free(msg);
+}
+
+void unseen_ibbs_msgs(player_t *player) {
+	int rc;
+	sqlite3_stmt *stmt;
+	sqlite3 *db;
+	char sqlbuffer[256];
+	message_t **msg;
+	int msg_count;
+	int i;
+	struct tm *ptr;
+	char *systemname;
+	int j;
+
+	rc = sqlite3_open("interbbs.db3", &db);
+	if (rc) {
+		// Error opening the database
+        printf("Error opening interbbs database: %s\n", sqlite3_errmsg(db));
+        sqlite3_close(db);
+        exit(1);
+    }
+	snprintf(sqlbuffer, 256, "SELECT * FROM messages WHERE recipient LIKE ?;");
+	sqlite3_prepare_v2(db, sqlbuffer, strlen(sqlbuffer) + 1, &stmt, NULL);
+	sqlite3_bind_text(stmt, 1, player->gamename, strlen(player->gamename) + 1, SQLITE_STATIC);
+
+	msg = NULL;
+	msg_count = 0;
+
+	rc = sqlite3_step(stmt);
+	while (rc == SQLITE_ROW) {
+		
+		if (msg == NULL) {
+			msg = (message_t **)malloc(sizeof(message_t *));
+		} else {
+			msg = (message_t **)realloc(msg, sizeof(message_t *) * (msg_count + 1));
+		}
+
+		msg[msg_count] = (message_t *)malloc(sizeof(message_t));
+		msg[msg_count]->id = sqlite3_column_int(stmt, 0);
+		strncpy(msg[msg_count]->to, (const char *)sqlite3_column_text(stmt, 1), 17);
+		strncpy(msg[msg_count]->from, (const char *)sqlite3_column_text(stmt, 2), 17);
+		strncpy(msg[msg_count]->addr, (const char *)sqlite3_column_text(stmt, 3), 24);
+		msg[msg_count]->date = sqlite3_column_int(stmt, 4);
+		msg[msg_count]->seen = sqlite3_column_int(stmt, 5);
+		strncpy(msg[msg_count]->body, (const char *)sqlite3_column_text(stmt, 6), 256);
+		msg_count++;
+		
+		rc = sqlite3_step(stmt);
+	}
+
+	if (rc != SQLITE_DONE) {
+		od_printf("Error: %s\n", sqlite3_errmsg(db));
+	}
+	
+	sqlite3_finalize(stmt);
+	sqlite3_close(db);
+
+	// display unseen messages
+	od_printf("\r\nDisplaying inter-galactic messages for %s\r\n", player->gamename);
+
+	for (i=0;i<msg_count;i++) {
+		if (msg[i]->seen == 0) {
+			ptr = localtime(&msg[i]->date);
+
+			for (j=0;j<InterBBSInfo.nTotalSystems;j++) {
+				if (strcmp(InterBBSInfo.paOtherSystem[j].szAddress, msg[i]->addr) == 0) {
+					systemname = InterBBSInfo.paOtherSystem[j].szSystemName;
+					break;
+				}
+			}
+
+			od_printf("`white`Message sent from `bright yellow`%s`white` by `bright green`%s`white` on `bright cyan`%.2d/%.2d/%4d`white`\r\n", systemname, msg[i]->from, ptr->tm_mday, ptr->tm_mon + 1, ptr->tm_year + 1900);
+			od_printf("`grey`   %s`white`\r\n", msg[i]->body);
+			msg[i]->seen = 1;
+		}
+	}
+
+	od_printf("\r\nPress a key to continue\r\n");
+	od_get_key(TRUE);
+
+	// update messages
+	rc = sqlite3_open("interbbs.db3", &db);
+	if (rc) {
+		// Error opening the database
+        printf("Error opening interbbs database: %s\n", sqlite3_errmsg(db));
         sqlite3_close(db);
         exit(1);
     }
@@ -1185,6 +1291,26 @@ void perform_maintenance()
 				break;
 			case 4:
 				// message
+				rc = sqlite3_open("interbbs.db3", &db);
+				if (rc) {
+					// Error opening the database
+					printf("Error opening interbbs database: %s\n", sqlite3_errmsg(db));
+					sqlite3_close(db);
+					exit(1);
+				}
+				snprintf(sqlbuffer, 256, "INSERT INTO messages (recipient, 'from', address, date, seen, body) VALUES(?, ?, ?, ?, ?, ?)");
+				sqlite3_prepare_v2(db, sqlbuffer, strlen(sqlbuffer) + 1, &stmt, NULL);
+				sqlite3_bind_text(stmt, 1, msg.victim_name, strlen(msg.victim_name) + 1, SQLITE_STATIC);
+				sqlite3_bind_text(stmt, 2, msg.player_name, strlen(msg.player_name) + 1, SQLITE_STATIC);
+				sqlite3_bind_text(stmt, 3, msg.from, strlen(msg.from) + 1, SQLITE_STATIC);
+				sqlite3_bind_int(stmt, 4, msg.created);
+				sqlite3_bind_int(stmt, 5, 0);
+				sqlite3_bind_text(stmt, 6, msg.message, strlen(msg.message) + 1, SQLITE_STATIC);
+				
+				sqlite3_step(stmt);
+				sqlite3_finalize(stmt);
+				
+				sqlite3_close(db);
 				break;
 			default:
 				printf("Unknown message type: %d\n", msg.type);
@@ -1276,13 +1402,13 @@ void state_of_the_galaxy(player_t *player) {
 	od_printf("`bright blue`============================================================`white`\r\n");
 }
 
-player_t *select_victim(player_t *player)
+player_t *select_victim(player_t *player, char *prompt)
 {
 	char gamename[17];
 	player_t *victim;
 
 	while (1) {
-		od_printf("\r\nWho do you want to attack ('?' for a list, ENTER to cancel) ? ");
+		od_printf("\r\n%s ('?' for a list, ENTER to cancel) ? ", prompt);
 		od_input_str(gamename, 17, 32, 126);
 		if (strlen(gamename) == 1 && gamename[0] == '?') {
 			list_empires(player);
@@ -1327,12 +1453,72 @@ void game_loop(player_t *player)
 
 	unseen_msgs(player);
 
+	if (interBBSMode == 1) {
+		unseen_ibbs_msgs(player);
+	}
+
 	while (player->turns_left) {
 		
 		// Diplomatic Stage
-
-
-
+		done = 0;
+		while (done == 0) {
+			od_printf("`bright cyan`============================================================\r\n");
+			od_printf("`white` Diplomatic Relations\r\n", player->credits);
+			od_printf("`bright cyan`============================================================`white`\r\n");
+			od_printf("  (1) Send a sub-space message\r\n");
+			if (interBBSMode == 1) {
+				od_printf("  (2) Send an inter-galactic message\r\n");
+			}
+			od_printf("  (D) Done\r\n");
+			od_printf("`bright cyan`============================================================`white`\r\n");
+			if (interBBSMode == 1) {
+				c = od_get_answer("12dD");
+			} else {
+				c = od_get_answer("1dD");
+			}
+			switch (c) {
+				case '1':
+					victim = select_victim(player, "Who do you want to message");
+					if (victim != NULL) {
+						od_printf("Type your message (256 chars max)\r\n");
+						od_input_str(message, 256, 32, 126);
+						if (strlen(message) > 0) {
+							send_message(victim, player, message);
+							od_printf("\r\nMessage sent!\r\n");
+						} else {
+							od_printf("\r\nNot sending an empty message.\r\n");
+						}
+						free(victim);
+					}
+					break;
+				case '2':
+					addr = select_bbs();
+					if (addr != NULL) {
+						memset(&msg, 0, sizeof(ibbsmsg_t));
+						if (select_ibbs_player(addr, msg.victim_name) == 0) {
+							od_printf("Type your message (256 chars max)\r\n");
+							od_input_str(msg.message, 256, 32, 126);
+							if (strlen(msg.message) > 0) {
+								msg.type = 4;
+								strcpy(msg.player_name, player->gamename);
+								strcpy(msg.from, InterBBSInfo.szThisNodeAddress);
+								msg.created = time(NULL);
+								if (IBSend(&InterBBSInfo, addr, &msg, sizeof(ibbsmsg_t)) != eSuccess) {
+									od_printf("\r\nMessage failed to send.\r\n");
+								} else {
+									od_printf("\r\nMessage sent!\r\n");
+								}
+							} else {
+								od_printf("\r\nNot sending an empty message.\r\n");
+							}
+						}
+					}
+					break;
+				default:
+					done = 1;
+					break;
+			}
+		}
 		// State of the Galaxy
 		state_of_the_galaxy(player);
 
@@ -1546,7 +1732,7 @@ void game_loop(player_t *player)
 			c = od_get_answer("1dD");
 			switch(tolower(c)) {
 			case '1':
-				victim = select_victim(player);
+				victim = select_victim(player, "Who do you want to attack");
 				if (victim != NULL) {
 					i = rand() % 100 + 1;
 					if (i < 50) {
@@ -1570,7 +1756,7 @@ void game_loop(player_t *player)
 		c = od_get_answer("yYnN");
 
 		if (tolower(c) == 'y') {
-			victim = select_victim(player);
+			victim = select_victim(player, "Who do you want to message");
 			if (victim != NULL) {
 				// do attack
 				if (player->troops > 0) {
@@ -1878,18 +2064,19 @@ int main(int argc, char **argv)
 
 	do {
 		od_printf("\r\n`white`Game Menu\r\n");
-		od_printf("`red`-------------------\r\n");
-		od_printf(" `white`(`yellow`1`white`) Play Game\r\n");
-		od_printf(" `white`(`yellow`2`white`) See Status\r\n");
-		od_printf(" `white`(`yellow`3`white`) See Scores\r\n");
+		od_printf("`red`--------------------------------------\r\n");
+		od_printf(" `white`(`bright yellow`1`white`) Play Game\r\n");
+		od_printf(" `white`(`bright yellow`2`white`) See Status\r\n");
+		od_printf(" `white`(`bright yellow`3`white`) See Scores\r\n");
 		if (interBBSMode == 1) {
-			od_printf(" `white`(`yellow`4`white`) See InterBBS Nodes\r\n");
+			od_printf(" `white`(`bright yellow`4`white`) See InterBBS Nodes\r\n");
+			od_printf(" `white`(`bright yellow`5`white`) See InterBBS Scores\r\n");
 		}
-		od_printf(" `white`(`yellow`Q`white`) Exit Game\r\n");
-		od_printf("`red`-------------------`white`\r\n");
+		od_printf(" `white`(`bright yellow`Q`white`) Exit Game\r\n");
+		od_printf("`red`--------------------------------------`white`\r\n");
 		od_printf("Your Choice? ");
 		if (interBBSMode == 1) {
-			c = od_get_answer("1234qQ");
+			c = od_get_answer("12345qQ");
 		} else {
 			c = od_get_answer("123qQ");
 		}
@@ -1912,6 +2099,11 @@ int main(int argc, char **argv)
 			for (i=0;i<InterBBSInfo.nTotalSystems;i++) {
 				od_printf("`bright green`%s, `bright yellow`%s `white`(%s)\r\n", InterBBSInfo.paOtherSystem[i].szSystemName, InterBBSInfo.paOtherSystem[i].szLocation, InterBBSInfo.paOtherSystem[i].szAddress);
 			}
+			od_printf("\r\nPress a key to continue\r\n");
+			od_get_key(TRUE);
+			break;
+		case '5':
+			od_send_file("ibbs_scores.ans");
 			od_printf("\r\nPress a key to continue\r\n");
 			od_get_key(TRUE);
 			break;

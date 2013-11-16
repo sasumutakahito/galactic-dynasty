@@ -536,7 +536,7 @@ void GetMessageFilename(char *pszMessageDir, DWORD lwMessageNum,
    {
    char szFileName[FILENAME_CHARS + 1];
 
-   sprintf(szFileName, "%ld.MSG", lwMessageNum);
+   sprintf(szFileName, "%ld.msg", lwMessageNum);
    MakeFilename(pszMessageDir, szFileName, pszOut);
    }
 
