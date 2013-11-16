@@ -1462,7 +1462,7 @@ void game_loop(player_t *player)
 		// Diplomatic Stage
 		done = 0;
 		while (done == 0) {
-			od_printf("`bright cyan`============================================================\r\n");
+			od_printf("\r\n`bright cyan`============================================================\r\n");
 			od_printf("`white` Diplomatic Relations\r\n", player->credits);
 			od_printf("`bright cyan`============================================================`white`\r\n");
 			od_printf("  (1) Send a sub-space message\r\n");
