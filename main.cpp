@@ -5,7 +5,7 @@
 #include <time.h>
 #include <sqlite3.h>
 #include <ctype.h>
-#include "interbbs.h"
+#include "interbbs2.h"
 
 #if _MSC_VER
 #define snprintf _snprintf
@@ -82,8 +82,8 @@ char *select_bbs() {
 
 	while (1) {
 		od_printf("\r\nWhich Galaxy do you want to attack...\r\n");
-		for (i=0;i<InterBBSInfo.nTotalSystems;i++) {
-			od_printf(" (%d) %s\r\n", i+1, InterBBSInfo.paOtherSystem[i].szSystemName);
+		for (i=0;i<InterBBSInfo.otherNodeCount;i++) {
+			od_printf(" (%d) %s\r\n", i+1, InterBBSInfo.otherNodes[i]->name);
 		}
 		od_printf(" (0) Cancel\r\n");
 		od_input_str(buffer, 8, '0', '9');
@@ -91,9 +91,9 @@ char *select_bbs() {
 		if (i == 0) {
 			return NULL;
 		}
-		if (i <= InterBBSInfo.nTotalSystems) {
-			od_printf(" Sending armarda to %s!\r\n", InterBBSInfo.paOtherSystem[i-1].szSystemName);
-			return InterBBSInfo.paOtherSystem[i-1].szAddress;;
+		if (i <= InterBBSInfo.otherNodeCount) {
+			od_printf(" Sending armarda to %s!\r\n", InterBBSInfo.otherNodes[i-1]->name);
+			return InterBBSInfo.otherNodes[i-1]->name;
 		}
 	}
 }
@@ -387,9 +387,9 @@ void unseen_ibbs_msgs(player_t *player) {
 		if (msg[i]->seen == 0) {
 			ptr = localtime(&msg[i]->date);
 
-			for (j=0;j<InterBBSInfo.nTotalSystems;j++) {
-				if (strcmp(InterBBSInfo.paOtherSystem[j].szAddress, msg[i]->addr) == 0) {
-					systemname = InterBBSInfo.paOtherSystem[j].szSystemName;
+			for (j=0;j<InterBBSInfo.otherNodeCount;j++) {
+				if (strcmp(InterBBSInfo.otherNodes[j]->name, msg[i]->name) == 0) {
+					systemname = InterBBSInfo.otherNodes[j]->name;
 					break;
 				}
 			}
@@ -649,9 +649,9 @@ void build_interbbs_scorefile()
 		scores[player_count] = (ibbsscores_t *)malloc(sizeof(ibbsscores_t));
 		strncpy(scores[player_count]->player_name, (char *)sqlite3_column_text(stmt, 0),  17);
 		
-		for (i=0;i<InterBBSInfo.nTotalSystems;i++) {
-			if (strcmp((char *)sqlite3_column_text(stmt, 1), InterBBSInfo.paOtherSystem[i].szAddress) == 0) {
-				strncpy(scores[player_count]->bbs_name, InterBBSInfo.paOtherSystem[i].szSystemName, 40);
+		for (i=0;i<InterBBSInfo.otherNodeCount;i++) {
+			if (strcmp((char *)sqlite3_column_text(stmt, 1), InterBBSInfo.otherNodes[i]->name) == 0) {
+				strncpy(scores[player_count]->bbs_name, InterBBSInfo.otherNodes[i]->name, 40);
 				break;
 			}
 		}
@@ -968,9 +968,9 @@ int do_interbbs_battle(char *victim, char *attacker, char *from, int troops, int
 	if (victim_player == NULL) {
 		return -1;
 	}
-	for (i=0;i<InterBBSInfo.nTotalSystems;i++) {
-		if (strcmp(from, InterBBSInfo.paOtherSystem[i].szAddress) == 0) {
-			strncpy(bbs_name, InterBBSInfo.paOtherSystem[i].szSystemName, 40);
+	for (i=0;i<InterBBSInfo.otherNodeCount;i++) {
+		if (strcmp(from, InterBBSInfo.otherNodes[i]->name) == 0) {
+			strncpy(bbs_name, InterBBSInfo.otherNodes[i]->name, 40);
 			break;
 		}
 	}
@@ -1045,7 +1045,7 @@ int do_interbbs_battle(char *victim, char *attacker, char *from, int troops, int
 	send_message(victim_player, NULL, message);
 
 	msg->type = 3;
-	strcpy(msg->from, InterBBSInfo.szThisNodeAddress);
+	strcpy(msg->from, InterBBSInfo.myNode->name);
 	strcpy(msg->player_name, attacker);
 	strcpy(msg->victim_name, victim);
 
@@ -1358,7 +1358,7 @@ void perform_maintenance()
 				if (player->last_score != calculate_score(player)) {
 					memset(&msg, 0, sizeof(ibbsmsg_t));
 					msg.type = 1;
-					strcpy(msg.from, InterBBSInfo.szThisNodeAddress);
+					strcpy(msg.from, InterBBSInfo.myNode->name);
 					strcpy(msg.player_name, player->gamename);
 					msg.score = calculate_score(player);
 					msg.created = time(NULL);
@@ -1501,7 +1501,7 @@ void game_loop(player_t *player)
 							if (strlen(msg.message) > 0) {
 								msg.type = 4;
 								strcpy(msg.player_name, player->gamename);
-								strcpy(msg.from, InterBBSInfo.szThisNodeAddress);
+								strcpy(msg.from, InterBBSInfo.myNode->name);
 								msg.created = time(NULL);
 								if (IBSend(&InterBBSInfo, addr, &msg, sizeof(ibbsmsg_t)) != eSuccess) {
 									od_printf("\r\nMessage failed to send.\r\n");
@@ -1835,7 +1835,7 @@ void game_loop(player_t *player)
 				if (addr != NULL) {
 					if (select_ibbs_player(addr, msg.victim_name) == 0) {
 						msg.type = 2;
-						strcpy(msg.from, InterBBSInfo.szThisNodeAddress);
+						strcpy(msg.from, InterBBSInfo.myNode->name);
 						strcpy(msg.player_name, player->gamename);
 						msg.score = 0;
 						msg.plunder_credits = 0;
@@ -2096,8 +2096,8 @@ int main(int argc, char **argv)
 			od_get_key(TRUE);
 			break;
 		case '4':
-			for (i=0;i<InterBBSInfo.nTotalSystems;i++) {
-				od_printf("`bright green`%s, `bright yellow`%s `white`(%s)\r\n", InterBBSInfo.paOtherSystem[i].szSystemName, InterBBSInfo.paOtherSystem[i].szLocation, InterBBSInfo.paOtherSystem[i].szAddress);
+			for (i=0;i<InterBBSInfo.otherNodeCount;i++) {
+				od_printf("`bright green`%s\r\n", InterBBSInfo.otherNodes[i]->name);
 			}
 			od_printf("\r\nPress a key to continue\r\n");
 			od_get_key(TRUE);
