@@ -1,4 +1,4 @@
-[7h[0;1;40;32m[?33h--------------------------------------------------------------------------------[0m €€ ≤ € €ﬂﬂ €   €ﬂ€ €ﬂ€ €ﬂ‹ﬂ€ €ﬂﬂ €
+[0;1;40;32m--------------------------------------------------------------------------------[0m €€ ≤ € €ﬂﬂ €   €ﬂ€ €ﬂ€ €ﬂ‹ﬂ€ €ﬂﬂ €
   € € € €ﬂﬂ €   €   € € € € € €ﬂﬂ €
   €≤ ≤€ €≤€ €€€ €€€ €€€ € € € €€€ ‹
 [1;32m--------------------------------------------------------------------------------
@@ -15,22 +15,17 @@
 
 [0m  [1mHere is a list of things I plan on adding in the future:
 
-
-[14C* Colour
-[14C* News System
-[0m[14C[1m* Messaging System
-[14C* Diplomacy
-[14C* More types of attacks
-[14C* Pirates ?
-[14C* InterBBS capability
+[0m[13C[1m* News System
+[0m[13C[1m* Diplomacy
+[0m[13C[1m* More types of attacks
+[0m[13C[1m* Pirates ?
 
 [0m  [1mIn addition to these new features, the current calculations and battle
-  systems need testing, balancing and in some case completly replacing.
+[0m  [1msystems need testing, balancing and in some case completly replacing.
 
-  If you have any suggestions, bug reports, etc, please connect to Scratch
-  BBS (telnet://scratch-bbs.com/) and post in the Galactic Dynasty message
-  area.
+[0m [1m If you have any suggestions, bug reports, etc, please connect to System 17
+[0m  [1mBBS (telnet://andrew.homeunix.org:2025/) and contact me there.
 
-[0m[6C[1mHave Fun
+[0m [1m [0m    [1mHave Fun
 
-[10C- Andrew
+ [0m[9C[1m- Andrew
