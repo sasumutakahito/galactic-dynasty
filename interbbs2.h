@@ -1,6 +1,10 @@
 #ifndef __IBBS_2
 #define __IBBS_2
 
+#ifdef WIN32
+#define _MSC_VER 1
+#endif // WIN32
+
 typedef enum
    {
    eSuccess,
@@ -25,8 +29,11 @@ typedef int tBool;
 
 #define SYSTEM_NAME_CHARS 40
 #define FILENAME "GALACTIC"
+#ifdef _MSC_VER
+#define PATH_SEP "\\"
+#else
 #define PATH_SEP "/"
-
+#endif
 #define VERSION "00001"
 
 typedef struct {

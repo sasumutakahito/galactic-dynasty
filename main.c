@@ -11,7 +11,6 @@
 
 #include "interbbs2.h"
 
-
 #if _MSC_VER
 #define snprintf _snprintf
 #define strcasecmp _stricmp
@@ -34,7 +33,7 @@ typedef struct player {
 	int population;
 	int food;
 	int credits;
-	
+
 	int planets_food;
 	int planets_ore;
 	int planets_industrial;
@@ -252,7 +251,7 @@ void unseen_msgs(player_t *player) {
 
 	rc = sqlite3_step(stmt);
 	while (rc == SQLITE_ROW) {
-		
+
 		if (msg == NULL) {
 			msg = (message_t **)malloc(sizeof(message_t *));
 		} else {
@@ -270,14 +269,14 @@ void unseen_msgs(player_t *player) {
 		msg[msg_count]->seen = sqlite3_column_int(stmt, 5);
 		strncpy(msg[msg_count]->body, (const char *)sqlite3_column_text(stmt, 6), 256);
 		msg_count++;
-		
+
 		rc = sqlite3_step(stmt);
 	}
 
 	if (rc != SQLITE_DONE) {
 		od_printf("Error: %s\n", sqlite3_errmsg(db));
 	}
-	
+
 	sqlite3_finalize(stmt);
 	sqlite3_close(db);
 
@@ -358,7 +357,7 @@ void unseen_ibbs_msgs(player_t *player) {
 
 	rc = sqlite3_step(stmt);
 	while (rc == SQLITE_ROW) {
-		
+
 		if (msg == NULL) {
 			msg = (message_t **)malloc(sizeof(message_t *));
 		} else {
@@ -374,14 +373,14 @@ void unseen_ibbs_msgs(player_t *player) {
 		msg[msg_count]->seen = sqlite3_column_int(stmt, 5);
 		strncpy(msg[msg_count]->body, (const char *)sqlite3_column_text(stmt, 6), 256);
 		msg_count++;
-		
+
 		rc = sqlite3_step(stmt);
 	}
 
 	if (rc != SQLITE_DONE) {
 		od_printf("Error: %s\n", sqlite3_errmsg(db));
 	}
-	
+
 	sqlite3_finalize(stmt);
 	sqlite3_close(db);
 
@@ -468,17 +467,17 @@ player_t *load_player_gn(char *gamename) {
 	snprintf(sqlbuffer, 256, "SELECT * FROM users WHERE gamename LIKE ?;");
 	sqlite3_prepare_v2(db, sqlbuffer, strlen(sqlbuffer) + 1, &stmt, NULL);
 	sqlite3_bind_text(stmt, 1, gamename, strlen(gamename) + 1, SQLITE_STATIC);
-	
+
 	rc = sqlite3_step(stmt);
 	if (rc == SQLITE_ROW) {
 		thePlayer = (player_t *)malloc(sizeof(player_t));
-		
+
 		if (!thePlayer) {
 			printf("OOM\n");
 			od_exit(-1, FALSE);
 			exit(-1);
 		}
-		
+
 		thePlayer->id = sqlite3_column_int(stmt, 0);
 		strncpy(thePlayer->gamename, (const char *)sqlite3_column_text(stmt, 2), 17);
 
@@ -486,11 +485,11 @@ player_t *load_player_gn(char *gamename) {
 		thePlayer->generals = sqlite3_column_int(stmt, 4);
 		thePlayer->fighters = sqlite3_column_int(stmt, 5);
 		thePlayer->defence_stations = sqlite3_column_int(stmt, 6);
-	
+
 		thePlayer->population = sqlite3_column_int(stmt, 7);
 		thePlayer->food = sqlite3_column_int(stmt, 8);
 		thePlayer->credits = sqlite3_column_int(stmt, 9);
-	
+
 		thePlayer->planets_food = sqlite3_column_int(stmt, 10);
 		thePlayer->planets_ore = sqlite3_column_int(stmt, 11);
 		thePlayer->planets_industrial = sqlite3_column_int(stmt, 12);
@@ -530,17 +529,17 @@ player_t *load_player(char *bbsname) {
 	snprintf(sqlbuffer, 256, "SELECT * FROM users WHERE bbsname LIKE ?;");
 	sqlite3_prepare_v2(db, sqlbuffer, strlen(sqlbuffer) + 1, &stmt, NULL);
 	sqlite3_bind_text(stmt, 1, bbsname, strlen(bbsname) + 1, SQLITE_STATIC);
-	
+
 	rc = sqlite3_step(stmt);
 	if (rc == SQLITE_ROW) {
 		thePlayer = (player_t *)malloc(sizeof(player_t));
-		
+
 		if (!thePlayer) {
 			printf("OOM\n");
 			od_exit(-1, FALSE);
 			exit(-1);
 		}
-		
+
 		thePlayer->id = sqlite3_column_int(stmt, 0);
 		strncpy(thePlayer->gamename, (const char *)sqlite3_column_text(stmt, 2), 17);
 
@@ -548,11 +547,11 @@ player_t *load_player(char *bbsname) {
 		thePlayer->generals = sqlite3_column_int(stmt, 4);
 		thePlayer->fighters = sqlite3_column_int(stmt, 5);
 		thePlayer->defence_stations = sqlite3_column_int(stmt, 6);
-	
+
 		thePlayer->population = sqlite3_column_int(stmt, 7);
 		thePlayer->food = sqlite3_column_int(stmt, 8);
 		thePlayer->credits = sqlite3_column_int(stmt, 9);
-	
+
 		thePlayer->planets_food = sqlite3_column_int(stmt, 10);
 		thePlayer->planets_ore = sqlite3_column_int(stmt, 11);
 		thePlayer->planets_industrial = sqlite3_column_int(stmt, 12);
@@ -589,7 +588,7 @@ void build_interbbs_scorefile()
 	ibbsscores_t *ptr;
 	int i;
 	int j;
-	
+
 	scores = NULL;
 	player_count = 0;
 
@@ -600,8 +599,8 @@ void build_interbbs_scorefile()
 		sqlite3_close(db);
 		exit(1);
 	}
-	
-	
+
+
 	snprintf(sqlbuffer, 256, "SELECT gamename,last_score FROM users;");
 	sqlite3_prepare_v2(db, sqlbuffer, strlen(sqlbuffer) + 1, &stmt, NULL);
 
@@ -628,7 +627,7 @@ void build_interbbs_scorefile()
 
 	sqlite3_finalize(stmt);
 	sqlite3_close(db);
-	
+
 	rc = sqlite3_open("interbbs.db3", &db);
 	if (rc) {
 		// Error opening the database
@@ -653,7 +652,7 @@ void build_interbbs_scorefile()
 
 		scores[player_count] = (ibbsscores_t *)malloc(sizeof(ibbsscores_t));
 		strncpy(scores[player_count]->player_name, (char *)sqlite3_column_text(stmt, 0),  17);
-		
+
 		for (i=0;i<InterBBSInfo.otherNodeCount;i++) {
 			if (strcmp((char *)sqlite3_column_text(stmt, 1), InterBBSInfo.otherNodes[i]->name) == 0) {
 				strncpy(scores[player_count]->bbs_name, InterBBSInfo.otherNodes[i]->name, 40);
@@ -678,7 +677,7 @@ void build_interbbs_scorefile()
 	}
 
 	fptr = fopen("ibbs_scores.ans", "w");
-	
+
 	if (fptr) {
 		fptr2 = fopen("ibbs_score_header.ans", "r");
 		if (fptr2) {
@@ -692,7 +691,7 @@ void build_interbbs_scorefile()
 		for (i=0;i<player_count;i++) {
 			fprintf(fptr, " %-31s %-31s %13d\r\n", scores[i]->player_name, scores[i]->bbs_name, scores[i]->score);
 		}
-		
+
 		for (i=0;i<player_count;i++) {
 			free(scores[i]);
 		}
@@ -710,13 +709,13 @@ void build_scorefile()
 	sqlite3_stmt *stmt;
 	int score;
 	char c;
-	
+
 	player_t *player;
 
 
 
 	fptr = fopen("scores.ans", "w");
-	
+
 	if (fptr) {
 		fptr2 = fopen("score_header.ans", "r");
 		c = fgetc(fptr2);
@@ -724,9 +723,9 @@ void build_scorefile()
 			fputc(c, fptr);
 			c = fgetc(fptr2);
 		}
-		
+
 		fclose(fptr2);
-		
+
 		rc = sqlite3_open("users.db3", &db);
 		if (rc) {
 			// Error opening the database
@@ -734,7 +733,7 @@ void build_scorefile()
 			sqlite3_close(db);
 			exit(1);
 		}
-		
+
 		snprintf(sqlbuffer, 256, "SELECT gamename FROM users;");
 		sqlite3_prepare_v2(db, sqlbuffer, strlen(sqlbuffer) + 1, &stmt, NULL);
 		while (sqlite3_step(stmt) == SQLITE_ROW) {
@@ -742,7 +741,7 @@ void build_scorefile()
 			fprintf(fptr, " %-64s %13d\r\n", player->gamename, calculate_score(player));
 			free(player);
 		}
-		
+
 		sqlite3_finalize(stmt);
 		sqlite3_close(db);
 	}
@@ -765,9 +764,9 @@ player_t *new_player(char *bbsname) {
 	}
 
 	player->id = -1;
-	
+
 	strncpy(player->bbsname, bbsname, 256);
-	
+
 	rc = sqlite3_open("users.db3", &db);
 	if (rc) {
 		// Error opening the database
@@ -796,7 +795,7 @@ player_t *new_player(char *bbsname) {
 		snprintf(sqlbuffer, 256, "SELECT * FROM users WHERE gamename LIKE ?;");
 		sqlite3_prepare_v2(db, sqlbuffer, strlen(sqlbuffer) + 1, &stmt, NULL);
 		sqlite3_bind_text(stmt, 1, player->gamename, strlen(player->gamename) + 1, SQLITE_STATIC);
-	
+
 		rc = sqlite3_step(stmt);
 		if (rc == SQLITE_ROW) {
 			od_printf("\r\n\r\nSorry, this name is taken.\r\n");
@@ -811,7 +810,7 @@ player_t *new_player(char *bbsname) {
 		sqlite3_finalize(stmt);
 	}
 
-	
+
 	sqlite3_close(db);
 
 	player->troops = 100;
@@ -823,7 +822,7 @@ player_t *new_player(char *bbsname) {
 	player->population = 250;
 	player->food = 50;
 	player->credits = 1000;
-	
+
 	player->planets_food = 1;
 	player->planets_ore = 0;
 	player->planets_industrial = 0;
@@ -854,7 +853,7 @@ void list_empires(player_t *me)
 
 	snprintf(sqlbuffer, 256, "SELECT gamename FROM USERS");
 	sqlite3_prepare_v2(db, sqlbuffer, strlen(sqlbuffer) + 1, &stmt, NULL);
-	
+
 	rc = sqlite3_step(stmt);
 	while (rc == SQLITE_ROW) {
 		if (strcmp((const char *)sqlite3_column_text(stmt, 0), me->gamename) != 0) {
@@ -1160,7 +1159,7 @@ void do_battle(player_t *victim, player_t *attacker, int troops, int generals, i
 		enemy_generals = victim->generals * victory_chance;
 		enemy_defence_stations = victim->defence_stations * victory_chance;
 
-		snprintf(message, 256, "%s attacked you and won, you lost %d citizens, %d credits, %d food, %d planets (%d ore, %d industrial, %d soldier, %d food), %d troops, %d generals, %d defence stations.", attacker->gamename, 
+		snprintf(message, 256, "%s attacked you and won, you lost %d citizens, %d credits, %d food, %d planets (%d ore, %d industrial, %d soldier, %d food), %d troops, %d generals, %d defence stations.", attacker->gamename,
 			plunder_people, plunder_credits, plunder_food, plunder_planet_food + plunder_planet_military + plunder_planet_industrial + plunder_planet_ore, plunder_planet_ore, plunder_planet_industrial
 			, plunder_planet_military, plunder_planet_food,  victim->troops - enemy_troops, victim->generals - enemy_generals, victim->defence_stations - enemy_defence_stations);
 	} else {
@@ -1187,7 +1186,7 @@ void do_battle(player_t *victim, player_t *attacker, int troops, int generals, i
 
 	od_printf(" %d troops, %d generals and %d fighters return home.\r\n", troops, generals, fighters);
 	od_printf(" %d enemy troops, %d enemy generals and %d enemy defence stations were destroyed\r\n", victim->troops - enemy_troops, victim->generals - enemy_generals, victim->defence_stations - enemy_defence_stations);
-	
+
 	od_printf("\r\nPress a key to continue\r\n");
 	od_get_key(TRUE);
 
@@ -1198,7 +1197,7 @@ void do_battle(player_t *victim, player_t *attacker, int troops, int generals, i
 	victim->troops = enemy_troops;
 	victim->generals = enemy_generals;
 	victim->defence_stations = enemy_defence_stations;
-	
+
 }
 
 
@@ -1268,7 +1267,7 @@ void perform_maintenance()
 					sqlite3_finalize(stmt);
 				}
 				sqlite3_close(db);
-			
+
 				break;
 			case 2:
 				// perform invasion
@@ -1288,11 +1287,11 @@ void perform_maintenance()
 						player->population += msg.plunder_people;
 						player->credits += msg.plunder_credits;
 						player->food += msg.plunder_food;
-						snprintf(message, 256, "Your armarda returned victorious, %d troops, %d generals and %d fighters returned with %d prisoners, %d credits and %d food.", 
+						snprintf(message, 256, "Your armarda returned victorious, %d troops, %d generals and %d fighters returned with %d prisoners, %d credits and %d food.",
 							msg.troops, msg.generals, msg.fighters, msg.plunder_people, msg.plunder_credits, msg.plunder_food);
 
 					} else {
-						snprintf(message, 256, "Your armarda returned defeated, %d troops, %d generals and %d fighters returned.", 
+						snprintf(message, 256, "Your armarda returned defeated, %d troops, %d generals and %d fighters returned.",
 							msg.troops, msg.generals, msg.fighters);
 					}
 					send_message(player, NULL, message);
@@ -1317,10 +1316,10 @@ void perform_maintenance()
 				sqlite3_bind_int(stmt, 4, msg.created);
 				sqlite3_bind_int(stmt, 5, 0);
 				sqlite3_bind_text(stmt, 6, msg.message, strlen(msg.message) + 1, SQLITE_STATIC);
-				
+
 				sqlite3_step(stmt);
 				sqlite3_finalize(stmt);
-				
+
 				sqlite3_close(db);
 				break;
 			default:
@@ -1336,7 +1335,7 @@ void perform_maintenance()
 		}
 
 		printf("Parsed %d inbound messages\nForwarded %d messages\n", i, k);
-	
+
 
 		// send all score messages
 		rc = sqlite3_open("users.db3", &db);
@@ -1346,10 +1345,10 @@ void perform_maintenance()
 			sqlite3_close(db);
 			exit(1);
 		}
-	
+
 		snprintf(sqlbuffer, 256, "SELECT gamename FROM users;");
 		sqlite3_prepare_v2(db, sqlbuffer, strlen(sqlbuffer) + 1, &stmt, NULL);
-	
+
 		i = 0;
 		rc = sqlite3_step(stmt);
 		while (rc == SQLITE_ROW) {
@@ -1366,11 +1365,11 @@ void perform_maintenance()
 
 		sqlite3_finalize(stmt);
 		sqlite3_close(db);
-	
+
 		for (j=0;j<i;j++) {
 			player = load_player_gn(players[j]);
 			if (player != NULL) {
-			
+
 				if (player->last_score != calculate_score(player)) {
 					memset(&msg, 0, sizeof(ibbsmsg_t));
 					msg.type = 1;
@@ -1380,19 +1379,19 @@ void perform_maintenance()
 					msg.created = time(NULL);
 					player->last_score = calculate_score(player);
 					save_player(player);
-					
+
 					IBSendAll(&InterBBSInfo, &msg, sizeof(ibbsmsg_t));
 				}
-			
+
 				free(player);
-			
+
 			}
 			free(players[j]);
 		}
 		if (i > 0) {
 			free(players);
 		}
-	
+
 		// build global top scores
 		build_interbbs_scorefile();
 	}
@@ -1474,7 +1473,7 @@ void game_loop(player_t *player)
 	}
 
 	while (player->turns_left) {
-		
+
 		// Diplomatic Stage
 		done = 0;
 		while (done == 0) {
@@ -1599,7 +1598,7 @@ void game_loop(player_t *player)
 			od_printf("\r\n");
 			od_printf(" (D) Done\r\n");
 			od_printf("`bright green`============================================================`white`\r\n");
-	
+
 			c = od_get_answer("12345678dD");
 			switch (c) {
 				case '1':
@@ -1759,7 +1758,7 @@ void game_loop(player_t *player)
 					} else {
 						od_printf("\r\nYour spy was successful!\r\n");
 						state_of_the_galaxy(victim);
-					}	
+					}
 					free(victim);
 				}
 				break;
@@ -1833,15 +1832,15 @@ void game_loop(player_t *player)
 									break;
 								}
 							}
-						}	
+						}
 					} else {
 						fighters_to_send = 0;
 					}
 					do_battle(victim, player, troops_to_send, generals_to_send, fighters_to_send);
 					save_player(victim);
 				}
-				free(victim);					
-			} 
+				free(victim);
+			}
 		}
 		if (interBBSMode == 1) {
 			od_printf("\r\nDo you want to launch an Inter-Galactic Armarda? (Y/N) ");
@@ -1877,7 +1876,7 @@ void game_loop(player_t *player)
 								}
 							}
 						} else {
-							od_printf("\r\nYou have no troops!\r\n");						
+							od_printf("\r\nYou have no troops!\r\n");
 						}
 						if (msg.troops > 0) {
 							if (player->generals > 0) {
@@ -1948,7 +1947,7 @@ void game_loop(player_t *player)
 
 		if (player->planets_ore > 0) {
 			od_printf("Your ore planets mined %d worth of minerals\r\n", player->planets_ore * 1000);
-	
+
 			player->credits += player->planets_ore * 1000;
 		}
 
@@ -1986,7 +1985,7 @@ void game_loop(player_t *player)
 		// loop
 		player->turns_left--;
 		save_player(player);
-		
+
 		if (player->turns_left > 0) {
 			od_printf("\r\nContinue ? (Y/N) ");
 			c = od_get_answer("YyNn");
@@ -2002,21 +2001,21 @@ void game_loop(player_t *player)
 		od_printf("\r\nPress a key to continue\r\n");
 		od_get_key(TRUE);
 	}
-	
+
 	// show scores
 	if (!od_send_file("scores.ans")) {
 		od_printf("No score file.\r\n");
 	}
 	od_printf("\r\nPress a key to continue\r\n");
 	od_get_key(TRUE);
-	
+
 }
 
 #if _MSC_VER
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,LPSTR lpszCmdLine,int nCmdShow)
 {
 #else
-int main(int argc, char **argv) 
+int main(int argc, char **argv)
 {
 #endif
 	player_t *player;
@@ -2072,7 +2071,7 @@ int main(int argc, char **argv)
 	timenow = time(NULL);
 	ptr = localtime(&timenow);
 	memcpy(&today_tm, ptr, sizeof(struct tm));
-	
+
 	if (today_tm.tm_mday != last_tm.tm_mday) {
 		player->turns_left = 5;
 	}

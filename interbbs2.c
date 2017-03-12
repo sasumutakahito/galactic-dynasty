@@ -9,6 +9,10 @@
 #include <stdint.h>
 #include "interbbs2.h"
 
+#ifdef _MSC_VER
+#include <winsock2.h>
+#endif // _MSC_VER
+
 #define NUM_KEYWORDS 4
 
 char *apszKeyWord[NUM_KEYWORDS] = {"SystemName",
@@ -46,17 +50,17 @@ tIBResult ProcessFile(tIBInfo *pInfo, char *filename, void *pBuffer, int nBuffer
     fread(destination, 1, destlen, fptr);
 
     if (strcasecmp(destination, pInfo->myNode->name) != 0) {
-        forward = 1; 
+        forward = 1;
     }
     fread(&memsize, sizeof(uint32_t), 1, fptr);
     memsize = ntohl(memsize);
 
     if (nBufferSize < memsize) {
         free(destination);
-        fclose(fptr);        
+        fclose(fptr);
 	printf("packet size mismatch");
         return eBadParameter;
-    } 
+    }
     fread(pBuffer, memsize, 1, fptr);
 
     if (forward) {
@@ -137,8 +141,8 @@ tIBResult IBSend(tIBInfo *pInfo, char *pszDestNode, void *pBuffer, uint32_t nBuf
 
     i = -1;
 
-    do {  
-        i++;      
+    do {
+        i++;
         snprintf(filename, PATH_MAX, "%s%s%s.%03d", dest->filebox, PATH_SEP, FILENAME, i);
         if (i==999) {
             return eBadParameter;
@@ -232,7 +236,7 @@ tBool ProcessConfigFile(char *pszFileName, int nKeyWords, char **papszKeyWord,
    unsigned int uCount;
    char szToken[MAX_TOKEN_CHARS + 1];
    int iKeyWord;
-   
+
    /* Attempt to open configuration file */
    if((pfConfigFile = fopen(pszFileName, "rt")) == NULL)
       {
