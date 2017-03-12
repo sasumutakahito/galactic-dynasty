@@ -23,6 +23,8 @@ tIBResult ProcessFile(tIBInfo *pInfo, char *filename, void *pBuffer, int nBuffer
     unsigned char destlen;
     char *destination;
     uint32_t memsize;
+    int forward = 0;
+    tIBResult result;
 
     fptr = fopen(filename, "rb");
 
@@ -44,10 +46,7 @@ tIBResult ProcessFile(tIBInfo *pInfo, char *filename, void *pBuffer, int nBuffer
     fread(destination, 1, destlen, fptr);
 
     if (strcasecmp(destination, pInfo->myNode->name) != 0) {
-        free(destination);
-        fclose(fptr);
-	printf("Packet not for me\n");
-        return eBadParameter;
+        forward = 1; 
     }
     fread(&memsize, sizeof(uint32_t), 1, fptr);
     memsize = ntohl(memsize);
@@ -59,6 +58,20 @@ tIBResult ProcessFile(tIBInfo *pInfo, char *filename, void *pBuffer, int nBuffer
         return eBadParameter;
     } 
     fread(pBuffer, memsize, 1, fptr);
+
+    if (forward) {
+        result = IBSend(pInfo, destination, pBuffer, memsize);
+
+	if (result == eSuccess) {
+            fclose(fptr);
+            free(destination);
+	    unlink(filename);
+            return eForwarded;
+        }
+        fclose(fptr);
+        free(destination);
+        return result;
+    }
 
     fclose(fptr);
     free(destination);

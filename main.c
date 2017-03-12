@@ -1214,12 +1214,18 @@ void perform_maintenance()
 	char **players;
 	player_t *player;
 	int j;
+        int k;
 	time_t last_score;
+        tIBResult result;
 	char message[256];
 	// parse all incoming messages
 	i = 0;
+        k = 0;
 	if (interBBSMode == 1) {
-		while (IBGet(&InterBBSInfo, &msg, sizeof(ibbsmsg_t)) == eSuccess) {
+		while (1) {
+		    result = IBGet(&InterBBSInfo, &msg, sizeof(ibbsmsg_t));
+
+	 	    if (result == eSuccess) {
 			switch(msg.type) {
 			case 1:
 				// add score to database
@@ -1322,9 +1328,14 @@ void perform_maintenance()
 				break;
 			}
 			i++;
+		    } else if (result == eForwarded) {
+			k++;
+		    } else {
+			break;
+		    }
 		}
 
-		printf("Parsed %d inbound messages\n", i);
+		printf("Parsed %d inbound messages\nForwarded %d messages\n", i, k);
 	
 
 		// send all score messages

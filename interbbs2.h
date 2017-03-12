@@ -4,6 +4,7 @@
 typedef enum
    {
    eSuccess,
+   eForwarded,
    eNoMoreMessages,
    eGeneralFailure,
    eBadParameter,
