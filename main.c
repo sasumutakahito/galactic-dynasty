@@ -5,6 +5,7 @@
 #include <time.h>
 #include <sqlite3.h>
 #include <ctype.h>
+#include <limits.h>
 #include "interbbs2.h"
 
 #if _MSC_VER
@@ -44,9 +45,9 @@ typedef struct player {
 
 typedef struct message {
 	int id;
-	char to[17];
-	char from[17];
-	char addr[24];
+	char to[40];
+	char from[40];
+	char addr[40];
 	int system;
 	time_t date;
 	int seen;
@@ -388,7 +389,7 @@ void unseen_ibbs_msgs(player_t *player) {
 			ptr = localtime(&msg[i]->date);
 
 			for (j=0;j<InterBBSInfo.otherNodeCount;j++) {
-				if (strcmp(InterBBSInfo.otherNodes[j]->name, msg[i]->name) == 0) {
+				if (strcmp(InterBBSInfo.otherNodes[j]->name, msg[i]->from) == 0) {
 					systemname = InterBBSInfo.otherNodes[j]->name;
 					break;
 				}
