@@ -6,7 +6,7 @@
 #include <dirent.h>
 #include <ctype.h>
 #include <unistd.h>
-
+#include <stdint.h>
 #include "interbbs2.h"
 
 #define NUM_KEYWORDS 4

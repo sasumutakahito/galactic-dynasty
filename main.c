@@ -6,7 +6,11 @@
 #include <sqlite3.h>
 #include <ctype.h>
 #include <limits.h>
+
+#include <stdint.h>
+
 #include "interbbs2.h"
+
 
 #if _MSC_VER
 #define snprintf _snprintf
@@ -45,8 +49,8 @@ typedef struct player {
 
 typedef struct message {
 	int id;
-	char to[40];
-	char from[40];
+	char to[17];
+	char from[17];
 	char addr[40];
 	int system;
 	time_t date;
@@ -55,20 +59,20 @@ typedef struct message {
 } message_t;
 
 typedef struct ibbsmsg {
-	int type;
-	char from[24];
+	int32_t type;
+	char from[40];
 	char player_name[17];
 	char victim_name[17];
-	int score;
-	int troops;
-	int generals;
-	int fighters;
-	int plunder_credits;
-	int plunder_food;
-	int plunder_people;
+	int32_t score;
+	int32_t troops;
+	int32_t generals;
+	int32_t fighters;
+	int32_t plunder_credits;
+	int32_t plunder_food;
+	int32_t plunder_people;
 	char message[256];
-	unsigned long created;
-} ibbsmsg_t;
+	uint32_t created;
+} __attribute__((packed)) ibbsmsg_t;
 
 typedef struct ibbsscore {
 	char player_name[17];
@@ -365,7 +369,7 @@ void unseen_ibbs_msgs(player_t *player) {
 		msg[msg_count]->id = sqlite3_column_int(stmt, 0);
 		strncpy(msg[msg_count]->to, (const char *)sqlite3_column_text(stmt, 1), 17);
 		strncpy(msg[msg_count]->from, (const char *)sqlite3_column_text(stmt, 2), 17);
-		strncpy(msg[msg_count]->addr, (const char *)sqlite3_column_text(stmt, 3), 24);
+		strncpy(msg[msg_count]->addr, (const char *)sqlite3_column_text(stmt, 3), 40);
 		msg[msg_count]->date = sqlite3_column_int(stmt, 4);
 		msg[msg_count]->seen = sqlite3_column_int(stmt, 5);
 		strncpy(msg[msg_count]->body, (const char *)sqlite3_column_text(stmt, 6), 256);
