@@ -46,6 +46,7 @@ tIBResult ProcessFile(tIBInfo *pInfo, char *filename, void *pBuffer, int nBuffer
     if (strcasecmp(destination, pInfo->myNode->name) != 0) {
         free(destination);
         fclose(fptr);
+	printf("Packet not for me\n");
         return eBadParameter;
     }
     fread(&memsize, sizeof(uint32_t), 1, fptr);
@@ -54,6 +55,7 @@ tIBResult ProcessFile(tIBInfo *pInfo, char *filename, void *pBuffer, int nBuffer
     if (nBufferSize < memsize) {
         free(destination);
         fclose(fptr);        
+	printf("packet size mismatch");
         return eBadParameter;
     } 
     fread(pBuffer, memsize, 1, fptr);
@@ -69,7 +71,7 @@ tIBResult IBGet(tIBInfo *pInfo, void *pBuffer, uint32_t nBufferSize) {
     DIR *dirp;
     struct dirent *dp;
     char filename[PATH_MAX];
-
+    tIBResult result;
     dirp = opendir(pInfo->myNode->filebox);
     if (!dirp) {
         return eMissingDir;
@@ -79,9 +81,8 @@ tIBResult IBGet(tIBInfo *pInfo, void *pBuffer, uint32_t nBufferSize) {
         if (strncmp(dp->d_name, "GALACTIC", 8) == 0) {
             snprintf(filename, PATH_MAX, "%s%s%s", pInfo->myNode->filebox, PATH_SEP, dp->d_name);
             closedir(dirp);
-            if (ProcessFile(pInfo, filename, pBuffer, nBufferSize) == eSuccess) {
-                return eSuccess;
-            }
+            result = ProcessFile(pInfo, filename, pBuffer, nBufferSize);
+            return result;
         }
     }
 
@@ -136,11 +137,11 @@ tIBResult IBSend(tIBInfo *pInfo, char *pszDestNode, void *pBuffer, uint32_t nBuf
         return eFileOpenError;
     }
 
-    unsigned char name_size = strlen(pInfo->myNode->name);
+    unsigned char name_size = strlen(dest->name);
     uint32_t nwNbufferSize = htonl(nBufferSize);
     fwrite(VERSION, 5, 1, fptr);
     fwrite(&name_size, sizeof(unsigned char), 1, fptr);
-    fwrite(pInfo->myNode->name, name_size, 1, fptr);
+    fwrite(dest->name, name_size, 1, fptr);
     fwrite(&nwNbufferSize, sizeof(uint32_t), 1, fptr);
     fwrite(pBuffer, nBufferSize, 1, fptr);
     fclose(fptr);
