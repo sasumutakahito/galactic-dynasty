@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ -ne odoors ]
+if [ ! -e odoors ]
 then
     git clone https://github.com/apamment/odoors
 fi
