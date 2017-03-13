@@ -58,7 +58,6 @@ tIBResult ProcessFile(tIBInfo *pInfo, char *filename, void *pBuffer, int nBuffer
     if (nBufferSize < memsize) {
         free(destination);
         fclose(fptr);
-	printf("packet size mismatch");
         return eBadParameter;
     }
     fread(pBuffer, memsize, 1, fptr);
@@ -99,6 +98,10 @@ tIBResult IBGet(tIBInfo *pInfo, void *pBuffer, uint32_t nBufferSize) {
             snprintf(filename, PATH_MAX, "%s%s%s", pInfo->myNode->filebox, PATH_SEP, dp->d_name);
             closedir(dirp);
             result = ProcessFile(pInfo, filename, pBuffer, nBufferSize);
+            if (result == eBadParameter) {
+                // skip over invalid packets
+                continue;
+            }
             return result;
         }
     }

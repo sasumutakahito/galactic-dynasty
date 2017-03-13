@@ -27,7 +27,7 @@ typedef int tBool;
 #define TRUE 1
 #endif
 
-#define SYSTEM_NAME_CHARS 40
+#define SYSTEM_NAME_CHARS 39
 #define FILENAME "GALACTIC"
 #ifdef _MSC_VER
 #define PATH_SEP "\\"
