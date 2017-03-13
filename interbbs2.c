@@ -146,10 +146,10 @@ tIBResult IBSend(tIBInfo *pInfo, char *pszDestNode, void *pBuffer, uint32_t nBuf
 
     do {
         i++;
-        snprintf(filename, PATH_MAX, "%s%s%s.%03d", dest->filebox, PATH_SEP, FILENAME, i);
-        if (i==999) {
+        if (i==1000) {
             return eBadParameter;
-        }
+        }        
+        snprintf(filename, PATH_MAX, "%s%s%s.%03d", dest->filebox, PATH_SEP, FILENAME, i);
     } while (!stat(filename, &s));
 
     fptr = fopen(filename, "wb");

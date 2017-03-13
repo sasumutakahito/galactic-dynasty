@@ -1,6 +1,9 @@
 #ifndef __IBBS_2
 #define __IBBS_2
 
+#define FILENAME "GALACTIC"
+#define VERSION "00001"
+
 #ifdef WIN32
 #define _MSC_VER 1
 #endif // WIN32
@@ -28,13 +31,12 @@ typedef int tBool;
 #endif
 
 #define SYSTEM_NAME_CHARS 39
-#define FILENAME "GALACTIC"
+
 #ifdef _MSC_VER
 #define PATH_SEP "\\"
 #else
 #define PATH_SEP "/"
 #endif
-#define VERSION "00001"
 
 typedef struct {
     char filebox[PATH_MAX + 1];

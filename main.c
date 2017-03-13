@@ -113,13 +113,14 @@ int select_ibbs_player(char *addr, char *player_name) {
 	int i;
 
 	rc = sqlite3_open("interbbs.db3", &db);
+	
 	if (rc) {
 		// Error opening the database
 		printf("Error opening interbbs database: %s\n", sqlite3_errmsg(db));
 		sqlite3_close(db);
 		exit(1);
 	}
-
+	sqlite3_busy_timeout(db, 5000);
 	count = 0;
 	names = NULL;
 
@@ -198,6 +199,7 @@ void send_message(player_t *to, player_t *from, char *body)
         sqlite3_close(db);
         exit(1);
     }
+	sqlite3_busy_timeout(db, 5000);
 	if (from == NULL) {
 		snprintf(sqlbuffer, 256, "INSERT INTO messages (recipient, system, date, seen, body) VALUES(?, ?, ?, ?, ?)");
 		sqlite3_prepare_v2(db, sqlbuffer, strlen(sqlbuffer) + 1, &stmt, NULL);
@@ -242,6 +244,7 @@ void unseen_msgs(player_t *player) {
         sqlite3_close(db);
         exit(1);
     }
+	sqlite3_busy_timeout(db, 5000);
 	snprintf(sqlbuffer, 256, "SELECT * FROM messages WHERE recipient LIKE ?;");
 	sqlite3_prepare_v2(db, sqlbuffer, strlen(sqlbuffer) + 1, &stmt, NULL);
 	sqlite3_bind_text(stmt, 1, player->gamename, strlen(player->gamename) + 1, SQLITE_STATIC);
@@ -305,13 +308,14 @@ void unseen_msgs(player_t *player) {
 
 	// update messages
 	rc = sqlite3_open("msgs.db3", &db);
+
 	if (rc) {
 		// Error opening the database
         printf("Error opening user database: %s\n", sqlite3_errmsg(db));
         sqlite3_close(db);
         exit(1);
     }
-
+	sqlite3_busy_timeout(db, 5000);
 	for (i=0;i<msg_count;i++) {
 		snprintf(sqlbuffer, 256, "UPDATE messages SET seen=? WHERE id = ?");
 		sqlite3_prepare_v2(db, sqlbuffer, strlen(sqlbuffer) + 1, &stmt, NULL);
@@ -342,12 +346,14 @@ void unseen_ibbs_msgs(player_t *player) {
 	int j;
 
 	rc = sqlite3_open("interbbs.db3", &db);
+
 	if (rc) {
 		// Error opening the database
         printf("Error opening interbbs database: %s\n", sqlite3_errmsg(db));
         sqlite3_close(db);
         exit(1);
     }
+	sqlite3_busy_timeout(db, 5000);
 	snprintf(sqlbuffer, 256, "SELECT * FROM messages WHERE recipient LIKE ?;");
 	sqlite3_prepare_v2(db, sqlbuffer, strlen(sqlbuffer) + 1, &stmt, NULL);
 	sqlite3_bind_text(stmt, 1, player->gamename, strlen(player->gamename) + 1, SQLITE_STATIC);
@@ -409,13 +415,14 @@ void unseen_ibbs_msgs(player_t *player) {
 
 	// update messages
 	rc = sqlite3_open("interbbs.db3", &db);
+
 	if (rc) {
 		// Error opening the database
         printf("Error opening interbbs database: %s\n", sqlite3_errmsg(db));
         sqlite3_close(db);
         exit(1);
     }
-
+	sqlite3_busy_timeout(db, 5000);
 	for (i=0;i<msg_count;i++) {
 		snprintf(sqlbuffer, 256, "UPDATE messages SET seen=? WHERE id = ?");
 		sqlite3_prepare_v2(db, sqlbuffer, strlen(sqlbuffer) + 1, &stmt, NULL);
@@ -458,12 +465,14 @@ player_t *load_player_gn(char *gamename) {
 	char sqlbuffer[256];
 
 	rc = sqlite3_open("users.db3", &db);
+
 	if (rc) {
 		// Error opening the database
         printf("Error opening user database: %s\n", sqlite3_errmsg(db));
         sqlite3_close(db);
         exit(1);
     }
+	sqlite3_busy_timeout(db, 5000);
 	snprintf(sqlbuffer, 256, "SELECT * FROM users WHERE gamename LIKE ?;");
 	sqlite3_prepare_v2(db, sqlbuffer, strlen(sqlbuffer) + 1, &stmt, NULL);
 	sqlite3_bind_text(stmt, 1, gamename, strlen(gamename) + 1, SQLITE_STATIC);
@@ -526,6 +535,7 @@ player_t *load_player(char *bbsname) {
         sqlite3_close(db);
         exit(1);
     }
+	sqlite3_busy_timeout(db, 5000);
 	snprintf(sqlbuffer, 256, "SELECT * FROM users WHERE bbsname LIKE ?;");
 	sqlite3_prepare_v2(db, sqlbuffer, strlen(sqlbuffer) + 1, &stmt, NULL);
 	sqlite3_bind_text(stmt, 1, bbsname, strlen(bbsname) + 1, SQLITE_STATIC);
@@ -599,7 +609,7 @@ void build_interbbs_scorefile()
 		sqlite3_close(db);
 		exit(1);
 	}
-
+	sqlite3_busy_timeout(db, 5000);
 
 	snprintf(sqlbuffer, 256, "SELECT gamename,last_score FROM users;");
 	sqlite3_prepare_v2(db, sqlbuffer, strlen(sqlbuffer) + 1, &stmt, NULL);
@@ -635,6 +645,7 @@ void build_interbbs_scorefile()
 		sqlite3_close(db);
 		exit(1);
 	}
+	sqlite3_busy_timeout(db, 5000);
 
 	snprintf(sqlbuffer, 256, "SELECT gamename,address,score FROM scores;");
 	sqlite3_prepare_v2(db, sqlbuffer, strlen(sqlbuffer) + 1, &stmt, NULL);
@@ -733,7 +744,7 @@ void build_scorefile()
 			sqlite3_close(db);
 			exit(1);
 		}
-
+		sqlite3_busy_timeout(db, 5000);
 		snprintf(sqlbuffer, 256, "SELECT gamename FROM users;");
 		sqlite3_prepare_v2(db, sqlbuffer, strlen(sqlbuffer) + 1, &stmt, NULL);
 		while (sqlite3_step(stmt) == SQLITE_ROW) {
@@ -774,7 +785,7 @@ player_t *new_player(char *bbsname) {
         sqlite3_close(db);
         exit(1);
     }
-
+	sqlite3_busy_timeout(db, 5000);
 	od_send_file("instruction.ans");
 
 	while (1) {
@@ -850,7 +861,7 @@ void list_empires(player_t *me)
         sqlite3_close(db);
         exit(1);
     }
-
+	sqlite3_busy_timeout(db, 5000);
 	snprintf(sqlbuffer, 256, "SELECT gamename FROM USERS");
 	sqlite3_prepare_v2(db, sqlbuffer, strlen(sqlbuffer) + 1, &stmt, NULL);
 
@@ -878,6 +889,7 @@ void save_player(player_t *player) {
         sqlite3_close(db);
         exit(1);
     }
+	sqlite3_busy_timeout(db, 5000);	
 	if (player->id == -1) {
 			snprintf(sqlbuffer, 1024, "INSERT INTO users (bbsname, gamename, troops, generals, fighters, defence_stations, "
 									  "population, food, credits, planets_food, planets_ore, planets_industrial, "
@@ -1235,6 +1247,7 @@ void perform_maintenance()
 					sqlite3_close(db);
 					exit(1);
 				}
+				sqlite3_busy_timeout(db, 5000);
 				snprintf(sqlbuffer, 256, "SELECT id, last FROM scores WHERE gamename=? and address=?");
 				sqlite3_prepare_v2(db, sqlbuffer, strlen(sqlbuffer) + 1, &stmt, NULL);
 				sqlite3_bind_text(stmt, 1, msg.player_name, strlen(msg.player_name) + 1, SQLITE_STATIC);
@@ -1308,6 +1321,7 @@ void perform_maintenance()
 					sqlite3_close(db);
 					exit(1);
 				}
+				sqlite3_busy_timeout(db, 5000);
 				snprintf(sqlbuffer, 256, "INSERT INTO messages (recipient, 'from', address, date, seen, body) VALUES(?, ?, ?, ?, ?, ?)");
 				sqlite3_prepare_v2(db, sqlbuffer, strlen(sqlbuffer) + 1, &stmt, NULL);
 				sqlite3_bind_text(stmt, 1, msg.victim_name, strlen(msg.victim_name) + 1, SQLITE_STATIC);
@@ -1345,7 +1359,7 @@ void perform_maintenance()
 			sqlite3_close(db);
 			exit(1);
 		}
-
+		sqlite3_busy_timeout(db, 5000);
 		snprintf(sqlbuffer, 256, "SELECT gamename FROM users;");
 		sqlite3_prepare_v2(db, sqlbuffer, strlen(sqlbuffer) + 1, &stmt, NULL);
 
