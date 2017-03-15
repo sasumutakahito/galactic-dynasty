@@ -80,23 +80,31 @@ typedef struct ibbsscore {
 } ibbsscores_t;
 
 
-char *select_bbs() {
+char *select_bbs(int type) {
 	int i;
 	char buffer[8];
 
 	while (1) {
-		od_printf("\r\nWhich Galaxy do you want to attack...\r\n");
+		if (type == 1) {
+			od_printf("\r\nWhich Galaxy do you want to attack...\r\n");
+		} else {
+			od_printf("\r\nWhich Galaxy do you want to send a message to...\r\n");
+		}
 		for (i=0;i<InterBBSInfo.otherNodeCount;i++) {
 			od_printf(" (%d) %s\r\n", i+1, InterBBSInfo.otherNodes[i]->name);
 		}
 		od_printf(" (0) Cancel\r\n");
 		od_input_str(buffer, 8, '0', '9');
 		i = atoi(buffer);
-		if (i == 0) {
+		if (i <= 0) {
 			return NULL;
 		}
 		if (i <= InterBBSInfo.otherNodeCount) {
-			od_printf(" Sending armarda to %s!\r\n", InterBBSInfo.otherNodes[i-1]->name);
+			if (type == 1) {
+				od_printf(" Sending armarda to %s!\r\n", InterBBSInfo.otherNodes[i-1]->name);
+			} else {
+				od_printf(" Sending a message to %s!\r\n", InterBBSInfo.otherNodes[i-1]->name);
+			}
 			return InterBBSInfo.otherNodes[i-1]->name;
 		}
 	}
@@ -1521,7 +1529,7 @@ void game_loop(player_t *player)
 					}
 					break;
 				case '2':
-					addr = select_bbs();
+					addr = select_bbs(2);
 					if (addr != NULL) {
 						memset(&msg, 0, sizeof(ibbsmsg_t));
 						if (select_ibbs_player(addr, msg.victim_name) == 0) {
@@ -1860,7 +1868,7 @@ void game_loop(player_t *player)
 			od_printf("\r\nDo you want to launch an Inter-Galactic Armarda? (Y/N) ");
 			c = od_get_answer("YyNn");
 			if (tolower(c) == 'y') {
-				addr = select_bbs();
+				addr = select_bbs(1);
 				if (addr != NULL) {
 					if (select_ibbs_player(addr, msg.victim_name) == 0) {
 						msg.type = 2;
