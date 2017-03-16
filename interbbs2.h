@@ -1,8 +1,8 @@
 #ifndef __IBBS_2
 #define __IBBS_2
 
-#define FILENAME "GALACTIC"
-#define VERSION "00002"
+#define FILEEXT "GAL"
+#define VERSION "00003"
 
 #ifdef WIN32
 #define _MSC_VER 1
@@ -44,6 +44,8 @@ typedef struct {
 } tOtherNode;
 
 typedef struct {
+    uint32_t league;
+    uint32_t nodeNo;
     tOtherNode *myNode;
     tOtherNode **otherNodes;
     int otherNodeCount;
