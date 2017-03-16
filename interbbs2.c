@@ -143,6 +143,7 @@ tIBResult IBSend(tIBInfo *pInfo, char *pszDestNode, void *pBuffer, uint32_t nBuf
     FILE *fptr;
     time_t now;
     struct tm *now_tm;
+    int minutes;
 
     for (i=0;i<pInfo->otherNodeCount;i++) {
         if (!strcmp(pInfo->otherNodes[i]->name, pszDestNode)) {
@@ -159,8 +160,16 @@ tIBResult IBSend(tIBInfo *pInfo, char *pszDestNode, void *pBuffer, uint32_t nBuf
 
     now = time(NULL);
     now_tm = localtime(&now);
-    
-    snprintf(filename, PATH_MAX, "%s%s%02d%02d%02d%02d.%s", dest->filebox, PATH_SEP, now_tm->tm_mday, now_tm->tm_hour, now_tm->tm_min, pInfo->nodeNo, FILEEXT);
+    minutes = (now_tm->tm_mday + 1) * 24 * 60;
+    minutes += (now_tm->tm_hour) * 60;
+    minutes += now_tm->tm_min;
+    do {
+        i++;
+        snprintf(filename, PATH_MAX, "%s%s%04X%02X%02X.%s", dest->filebox, PATH_SEP, minutes, pInfo->nodeNo, i, FILEEXT);
+        if (i == 0x100) {
+            return eBadParameter;
+        }
+    } while (stat(filename, &s) == 0);
 
 
     fptr = fopen(filename, "wb");
