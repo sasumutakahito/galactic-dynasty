@@ -1495,7 +1495,7 @@ void state_of_the_galaxy(player_t *player) {
 	od_printf("`bright blue`============================================================`white`\r\n");
 }
 
-player_t *select_victim(player_t *player, char *prompt)
+player_t *select_victim(player_t *player, char *prompt, int type)
 {
 	char gamename[17];
 	player_t *victim;
@@ -1513,7 +1513,7 @@ player_t *select_victim(player_t *player, char *prompt)
 				od_printf("\r\nNo such empire!\r\n");
 			} else if (victim->id == player->id) {
 				od_printf("\r\nYou can't attack yourself!\r\n");
-			} else if (victim->total_turns < turns_in_protection) {
+			} else if (victim->total_turns < turns_in_protection && type == 2) {
 				od_printf("\r\nSorry, that empire is under protection.\r\n");
 			} else {
 				return victim;
@@ -1574,7 +1574,7 @@ void game_loop(player_t *player)
 			}
 			switch (c) {
 				case '1':
-					victim = select_victim(player, "Who do you want to message");
+					victim = select_victim(player, "Who do you want to message", 1);
 					if (victim != NULL) {
 						od_printf("Type your message (256 chars max)\r\n");
 						od_input_str(message, 256, 32, 126);
@@ -1828,7 +1828,7 @@ void game_loop(player_t *player)
 			c = od_get_answer("1dD");
 			switch(tolower(c)) {
 			case '1':
-				victim = select_victim(player, "Who do you want to attack");
+				victim = select_victim(player, "Who do you want to attack", 2);
 				if (victim != NULL) {
 					i = rand() % 100 + 1;
 					if (i < 50) {
@@ -1855,7 +1855,7 @@ void game_loop(player_t *player)
 			if (player->total_turns < turns_in_protection) {
 				od_printf("\r\nSorry, you are currently in protection and can not attack\r\n");
 			} else {
-				victim = select_victim(player, "Who do you want to attack");
+				victim = select_victim(player, "Who do you want to attack", 2);
 				if (victim != NULL) {
 					// do attack
 					if (player->troops > 0) {
