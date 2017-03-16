@@ -107,12 +107,12 @@ tIBResult IBGet(tIBInfo *pInfo, void *pBuffer, uint32_t nBufferSize) {
     while ((dp = readdir(dirp)) != NULL) {
         if (strncmp(&dp->d_name[strlen(dp->d_name)-3], FILEEXT, 3) == 0) {
             snprintf(filename, PATH_MAX, "%s%s%s", pInfo->myNode->filebox, PATH_SEP, dp->d_name);
-            closedir(dirp);
             result = ProcessFile(pInfo, filename, pBuffer, nBufferSize);
             if (result == eBadParameter) {
                 // skip over invalid packets
                 continue;
             }
+            closedir(dirp);
             return result;
         }
     }
