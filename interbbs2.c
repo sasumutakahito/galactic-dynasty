@@ -23,6 +23,8 @@ char *apszKeyWord[NUM_KEYWORDS] = {"SystemName",
                                    "LinkName",
                                    "LinkFileOutbox"};
 
+int packetno = 0;
+
 tIBResult ProcessFile(tIBInfo *pInfo, char *filename, void *pBuffer, int nBufferSize) {
     char version[6];
     FILE *fptr;
@@ -156,21 +158,18 @@ tIBResult IBSend(tIBInfo *pInfo, char *pszDestNode, void *pBuffer, uint32_t nBuf
         return eBadParameter;
     }
 
-    i = -1;
-
     now = time(NULL);
     now_tm = localtime(&now);
     minutes = (now_tm->tm_mday + 1) * 24 * 60;
     minutes += (now_tm->tm_hour) * 60;
     minutes += now_tm->tm_min;
-    do {
-        i++;
-        snprintf(filename, PATH_MAX, "%s%s%04X%02X%02X.%s", dest->filebox, PATH_SEP, minutes, pInfo->nodeNo, i, FILEEXT);
-        if (i == 0x100) {
-            return eBadParameter;
-        }
-    } while (stat(filename, &s) == 0);
 
+    if (packetno == 0x100) {
+        return eBadParameter;
+    }
+
+    snprintf(filename, PATH_MAX, "%s%s%04X%02X%02X.%s", dest->filebox, PATH_SEP, minutes, pInfo->nodeNo, packetno, FILEEXT);
+    packetno++;
 
     fptr = fopen(filename, "wb");
     if (!fptr) {
