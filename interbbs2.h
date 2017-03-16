@@ -2,7 +2,7 @@
 #define __IBBS_2
 
 #define FILENAME "GALACTIC"
-#define VERSION "00001"
+#define VERSION "00002"
 
 #ifdef WIN32
 #define _MSC_VER 1

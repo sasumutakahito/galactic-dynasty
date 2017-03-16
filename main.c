@@ -10,11 +10,17 @@
 #include <stdint.h>
 
 #include "interbbs2.h"
+#include "inih/ini.h"
 
+#define TURNS_PER_DAY 5
+#define TURNS_IN_PROTECTION 0
 #if _MSC_VER
 #define snprintf _snprintf
 #define strcasecmp _stricmp
 #endif
+
+int turns_per_day;
+int turns_in_protection;
 
 tIBInfo InterBBSInfo;
 int interBBSMode;
@@ -44,6 +50,7 @@ typedef struct player {
 	int turns_left;
 	time_t last_played;
 	int last_score;
+	int total_turns;
 } player_t;
 
 typedef struct message {
@@ -79,6 +86,19 @@ typedef struct ibbsscore {
 	int score;
 } ibbsscores_t;
 
+
+static int ini_handler(void* user, const char* section, const char* name,
+                   const char* value)
+{
+	if (strcasecmp(section, "main") == 0) {
+		if (strcasecmp(name, "turns per day") == 0) {
+			turns_per_day = atoi(value);
+		} else if (strcasecmp(name, "turns in protection") == 0) {
+			turns_in_protection = atoi(value);
+		}
+	}
+	return 1;
+}
 
 char *select_bbs(int type) {
 	int i;
@@ -518,6 +538,7 @@ player_t *load_player_gn(char *gamename) {
 		thePlayer->last_played = sqlite3_column_int(stmt, 16);
 		thePlayer->spies = sqlite3_column_int(stmt, 17);
 		thePlayer->last_score = sqlite3_column_int(stmt, 18);
+		thePlayer->total_turns = sqlite3_column_int(stmt, 19);
 
 		sqlite3_finalize(stmt);
 		sqlite3_close(db);
@@ -581,6 +602,7 @@ player_t *load_player(char *bbsname) {
 		thePlayer->last_played = sqlite3_column_int(stmt, 16);
 		thePlayer->spies = sqlite3_column_int(stmt, 17);
 		thePlayer->last_score = sqlite3_column_int(stmt, 18);
+		thePlayer->total_turns = sqlite3_column_int(stmt, 19);
 		sqlite3_finalize(stmt);
 		sqlite3_close(db);
 	} else {
@@ -849,9 +871,10 @@ player_t *new_player(char *bbsname) {
 
 	player->command_ship = 0;
 
-	player->turns_left = 5;
+	player->turns_left = turns_per_day;
 	player->last_played = time(NULL);
 	player->last_score = 0;
+	player->total_turns = 0;
 	return player;
 }
 
@@ -901,7 +924,7 @@ void save_player(player_t *player) {
 	if (player->id == -1) {
 			snprintf(sqlbuffer, 1024, "INSERT INTO users (bbsname, gamename, troops, generals, fighters, defence_stations, "
 									  "population, food, credits, planets_food, planets_ore, planets_industrial, "
-									  "planets_military, command_ship, turns_left, last_played, spies, last_score) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+									  "planets_military, command_ship, turns_left, last_played, spies, last_score, total_turns) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)");
 			sqlite3_prepare_v2(db, sqlbuffer, strlen(sqlbuffer) + 1, &stmt, NULL);
 			sqlite3_bind_text(stmt, 1, player->bbsname, strlen(player->bbsname) + 1, SQLITE_STATIC);
 			sqlite3_bind_text(stmt, 2, player->gamename, strlen(player->gamename) + 1, SQLITE_STATIC);
@@ -920,7 +943,8 @@ void save_player(player_t *player) {
 			sqlite3_bind_int(stmt, 15, player->turns_left);
 			sqlite3_bind_int(stmt, 16, player->last_played);
 			sqlite3_bind_int(stmt, 17, player->spies);
-			sqlite3_bind_int(stmt, 17, player->last_score);
+			sqlite3_bind_int(stmt, 18, player->last_score);
+			sqlite3_bind_int(stmt, 19, player->total_turns);
 	} else {
 			snprintf(sqlbuffer, 1024, "UPDATE users SET gamename=?,"
 													   "troops=?,"
@@ -938,7 +962,8 @@ void save_player(player_t *player) {
 													   "turns_left=?,"
 													   "last_played=?,"
 													   "spies=?, "
-													   "last_score=? WHERE id=?;");
+													   "last_score=?, "
+													   "total_turns=? WHERE id=?;");
 			sqlite3_prepare_v2(db, sqlbuffer, strlen(sqlbuffer) + 1, &stmt, NULL);
 			sqlite3_bind_text(stmt, 1, player->gamename, strlen(player->gamename) + 1, SQLITE_STATIC);
 			sqlite3_bind_int(stmt, 2, player->troops);
@@ -957,7 +982,8 @@ void save_player(player_t *player) {
 			sqlite3_bind_int(stmt, 15, player->last_played);
 			sqlite3_bind_int(stmt, 16, player->spies);
 			sqlite3_bind_int(stmt, 17, player->last_score);
-			sqlite3_bind_int(stmt, 18, player->id);
+			sqlite3_bind_int(stmt, 18, player->total_turns);
+			sqlite3_bind_int(stmt, 19, player->id);
 	}
 	rc = sqlite3_step(stmt);
 	if (rc != SQLITE_DONE) {
@@ -985,18 +1011,43 @@ int do_interbbs_battle(char *victim, char *attacker, char *from, int troops, int
 	int enemy_troops;
 	int enemy_generals;
 	int enemy_defence_stations;
-	char bbs_name[41];
+	char bbs_name[40];
 	char message[256];
 	int i;
 	player_t *victim_player = load_player_gn(victim);
 	if (victim_player == NULL) {
 		return -1;
 	}
+
+	memset(bbs_name, 0, 40);
+
 	for (i=0;i<InterBBSInfo.otherNodeCount;i++) {
 		if (strcmp(from, InterBBSInfo.otherNodes[i]->name) == 0) {
 			strncpy(bbs_name, InterBBSInfo.otherNodes[i]->name, 40);
 			break;
 		}
+	}
+
+	if (strlen(bbs_name) == 0) {
+		return -1;
+	}
+
+	if (victim_player->total_turns <= turns_in_protection) {
+		msg->type = 3;
+		strcpy(msg->from, InterBBSInfo.myNode->name);
+		strcpy(msg->player_name, attacker);
+		strcpy(msg->victim_name, victim);
+
+		msg->created = time(NULL);		
+		msg->plunder_credits = 0;
+		msg->plunder_people = 0;
+		msg->plunder_food = 0;
+		msg->troops = troops;
+		msg->fighters = fighters;
+		msg->generals = generals;
+		msg->score = 2;
+		free(victim_player);		
+		return 0;
 	}
 
 	// attack soldiers
@@ -1311,9 +1362,11 @@ void perform_maintenance()
 						snprintf(message, 256, "Your armarda returned victorious, %d troops, %d generals and %d fighters returned with %d prisoners, %d credits and %d food.",
 							msg.troops, msg.generals, msg.fighters, msg.plunder_people, msg.plunder_credits, msg.plunder_food);
 
-					} else {
+					} else if (msg.sore == 0) {
 						snprintf(message, 256, "Your armarda returned defeated, %d troops, %d generals and %d fighters returned.",
 							msg.troops, msg.generals, msg.fighters);
+					} else {
+						snprintf(message, 256, "Your armarda encounted galactic protection and all your troops returned disappointed.");
 					}
 					send_message(player, NULL, message);
 					save_player(player);
@@ -1436,6 +1489,9 @@ void state_of_the_galaxy(player_t *player) {
 	od_printf(" - Command Ship : %d%% complete\r\n", player->command_ship);
 	od_printf(" - Planets      : %d\r\n", player->planets_food + player->planets_ore + player->planets_military + player->planets_industrial);
 	od_printf("   (Ore %d)(Food %d) (Soldier %d) (Industrial %d)\r\n", player->planets_ore, player->planets_food, player->planets_military, player->planets_industrial);
+	if (player->total_turns <= turns_in_protection) {
+		od_printf("`bright yellow`You have %d turns left under protection.\r\n", turns_in_protection = player->total_turns);
+	}
 	od_printf("`bright blue`============================================================`white`\r\n");
 }
 
@@ -1457,11 +1513,14 @@ player_t *select_victim(player_t *player, char *prompt)
 				od_printf("\r\nNo such empire!\r\n");
 			} else if (victim->id == player->id) {
 				od_printf("\r\nYou can't attack yourself!\r\n");
+			} else if (victim->total_turns <= turns_in_protection) {
+				od_printf("\r\nSorry, that empire is under protection.\r\n");
 			} else {
 				return victim;
 			}
 		}
 	}
+	return NULL;
 }
 
 void game_loop(player_t *player)
@@ -2006,6 +2065,7 @@ void game_loop(player_t *player)
 
 		// loop
 		player->turns_left--;
+		player->total_turns++;
 		save_player(player);
 
 		if (player->turns_left > 0) {
@@ -2057,6 +2117,13 @@ int main(int argc, char **argv)
 		interBBSMode = 1;
 	}
 
+	turns_per_day = TURNS_PER_DAY;
+	turns_in_protection = TURNS_IN_PROTECTION;
+
+	if (ini_parse("galactic.ini", ini_handler, &conf) <0) {
+		fprintf(stderr, "Unable to load galactic.ini");
+	}
+
 #if _MSC_VER
 	if (strcasecmp(lpszCmdLine, "maintenance") == 0) {
 		perform_maintenance();
@@ -2071,6 +2138,7 @@ int main(int argc, char **argv)
 
 	od_parse_cmd_line(argc, argv);
 #endif
+
 	od_send_file("logo.ans");
 	od_get_key(TRUE);
 
@@ -2095,7 +2163,7 @@ int main(int argc, char **argv)
 	memcpy(&today_tm, ptr, sizeof(struct tm));
 
 	if (today_tm.tm_mday != last_tm.tm_mday) {
-		player->turns_left = 5;
+		player->turns_left = turns_per_day;
 	}
 	player->last_played = timenow;
 
@@ -2134,7 +2202,7 @@ int main(int argc, char **argv)
 			break;
 		case '4':
 			for (i=0;i<InterBBSInfo.otherNodeCount;i++) {
-				od_printf("`bright green`%s\r\n", InterBBSInfo.otherNodes[i]->name);
+				od_printf("`bright green`%s`white`\r\n", InterBBSInfo.otherNodes[i]->name);
 			}
 			od_printf("\r\nPress a key to continue\r\n");
 			od_get_key(TRUE);
