@@ -1489,8 +1489,8 @@ void state_of_the_galaxy(player_t *player) {
 	od_printf(" - Command Ship : %d%% complete\r\n", player->command_ship);
 	od_printf(" - Planets      : %d\r\n", player->planets_food + player->planets_ore + player->planets_military + player->planets_industrial);
 	od_printf("   (Ore %d)(Food %d) (Soldier %d) (Industrial %d)\r\n", player->planets_ore, player->planets_food, player->planets_military, player->planets_industrial);
-	if (player->total_turns <= turns_in_protection) {
-		od_printf("`bright yellow`You have %d turns left under protection.\r\n", turns_in_protection = player->total_turns);
+	if (player->total_turns < turns_in_protection) {
+		od_printf("`bright yellow`You have %d turns left under protection.\r\n", turns_in_protection - player->total_turns);
 	}
 	od_printf("`bright blue`============================================================`white`\r\n");
 }
@@ -1513,7 +1513,7 @@ player_t *select_victim(player_t *player, char *prompt)
 				od_printf("\r\nNo such empire!\r\n");
 			} else if (victim->id == player->id) {
 				od_printf("\r\nYou can't attack yourself!\r\n");
-			} else if (victim->total_turns <= turns_in_protection) {
+			} else if (victim->total_turns < turns_in_protection) {
 				od_printf("\r\nSorry, that empire is under protection.\r\n");
 			} else {
 				return victim;
@@ -1852,158 +1852,166 @@ void game_loop(player_t *player)
 		c = od_get_answer("yYnN");
 
 		if (tolower(c) == 'y') {
-			victim = select_victim(player, "Who do you want to message");
-			if (victim != NULL) {
-				// do attack
-				if (player->troops > 0) {
-					while (1) {
-						od_printf("\r\nSend how many troops? (MAX %d) ", player->troops);
-						od_input_str(buffer, 8, '0', '9');
-						if (strlen(buffer) > 0) {
-							i = atoi(buffer);
-							if (i > player->troops) {
-								od_printf("\r\nYou don't have that many!\r\n");
-							} else if (i > 0) {
-								od_printf("\r\nSending %d troops.\r\n", i);
-								troops_to_send = i;
-								player->troops -= i;
-								break;
-							} else if (i==0) {
-								od_printf("\r\nYou need at least 1 troop!\r\n");
-								break;
+			if (player->total_turns < turns_in_protection) {
+				od_printf("\r\nSorry, you are currently in protection and can not attack\r\n");
+			} else {
+				victim = select_victim(player, "Who do you want to attack");
+				if (victim != NULL) {
+					// do attack
+					if (player->troops > 0) {
+						while (1) {
+							od_printf("\r\nSend how many troops? (MAX %d) ", player->troops);
+							od_input_str(buffer, 8, '0', '9');
+							if (strlen(buffer) > 0) {
+								i = atoi(buffer);
+								if (i > player->troops) {
+									od_printf("\r\nYou don't have that many!\r\n");
+								} else if (i > 0) {
+									od_printf("\r\nSending %d troops.\r\n", i);
+									troops_to_send = i;
+									player->troops -= i;
+									break;
+								} else if (i==0) {
+									od_printf("\r\nYou need at least 1 troop!\r\n");
+									break;
+								}
 							}
 						}
+					} else {
+						od_printf("\r\nYou have no troops!\r\n");
+						free(victim);
 					}
-				} else {
-					od_printf("\r\nYou have no troops!\r\n");
+					if (troops_to_send > 0) {
+						if (player->generals > 0) {
+							while (1) {
+								od_printf("\r\nSend how many generals? (MAX %d) ", player->generals);
+								od_input_str(buffer, 8, '0', '9');
+								if (strlen(buffer) > 0) {
+									i = atoi(buffer);
+									if (i > player->generals) {
+										od_printf("\r\nYou don't have that many!\r\n");
+									} else {
+										od_printf("\r\nSending %d generals.\r\n", i);
+										generals_to_send = i;
+										player->generals -= i;
+										break;
+									}
+								}
+							}
+						} else {
+							generals_to_send = 0;
+						}
+						if (player->fighters > 0) {
+							while (1) {
+								od_printf("\r\nSend how many fighters? (MAX %d) ", player->fighters);
+								od_input_str(buffer, 8, '0', '9');
+								if (strlen(buffer) > 0) {
+									i = atoi(buffer);
+									if (i > player->fighters) {
+										od_printf("\r\nYou don't have that many!\r\n");
+									} else {
+										od_printf("\r\nSending %d fighters.\r\n", i);
+										fighters_to_send = i;
+										player->fighters -= i;
+										break;
+									}
+								}
+							}
+						} else {
+							fighters_to_send = 0;
+						}
+						do_battle(victim, player, troops_to_send, generals_to_send, fighters_to_send);
+						save_player(victim);
+					}
 					free(victim);
 				}
-				if (troops_to_send > 0) {
-					if (player->generals > 0) {
-						while (1) {
-							od_printf("\r\nSend how many generals? (MAX %d) ", player->generals);
-							od_input_str(buffer, 8, '0', '9');
-							if (strlen(buffer) > 0) {
-								i = atoi(buffer);
-								if (i > player->generals) {
-									od_printf("\r\nYou don't have that many!\r\n");
-								} else {
-									od_printf("\r\nSending %d generals.\r\n", i);
-									generals_to_send = i;
-									player->generals -= i;
-									break;
-								}
-							}
-						}
-					} else {
-						generals_to_send = 0;
-					}
-					if (player->fighters > 0) {
-						while (1) {
-							od_printf("\r\nSend how many fighters? (MAX %d) ", player->fighters);
-							od_input_str(buffer, 8, '0', '9');
-							if (strlen(buffer) > 0) {
-								i = atoi(buffer);
-								if (i > player->fighters) {
-									od_printf("\r\nYou don't have that many!\r\n");
-								} else {
-									od_printf("\r\nSending %d fighters.\r\n", i);
-									fighters_to_send = i;
-									player->fighters -= i;
-									break;
-								}
-							}
-						}
-					} else {
-						fighters_to_send = 0;
-					}
-					do_battle(victim, player, troops_to_send, generals_to_send, fighters_to_send);
-					save_player(victim);
-				}
-				free(victim);
 			}
 		}
 		if (interBBSMode == 1) {
 			od_printf("\r\nDo you want to launch an Inter-Galactic Armarda? (Y/N) ");
 			c = od_get_answer("YyNn");
 			if (tolower(c) == 'y') {
-				addr = select_bbs(1);
-				if (addr != NULL) {
-					if (select_ibbs_player(addr, msg.victim_name) == 0) {
-						msg.type = 2;
-						strcpy(msg.from, InterBBSInfo.myNode->name);
-						strcpy(msg.player_name, player->gamename);
-						msg.score = 0;
-						msg.plunder_credits = 0;
-						msg.plunder_food = 0;
-						msg.plunder_people = 0;
-						msg.created = time(NULL);
-						if (player->troops > 0) {
-							while (1) {
-								od_printf("\r\nSend how many troops? (MAX %d) ", player->troops);
-								od_input_str(buffer, 8, '0', '9');
-								if (strlen(buffer) > 0) {
-									i = atoi(buffer);
-									if (i > player->troops) {
-										od_printf("\r\nYou don't have that many!\r\n");
-									} else if (i > 0) {
-										od_printf("\r\nSending %d troops.\r\n", i);
-										msg.troops = i;
-										player->troops -= i;
-										break;
-									} else {
-										od_printf("\r\nYou must send at least 1 troop.\r\n");
-									}
-								}
-							}
-						} else {
-							od_printf("\r\nYou have no troops!\r\n");
-						}
-						if (msg.troops > 0) {
-							if (player->generals > 0) {
+				if (player->total_turns < turns_in_protection) {
+					od_printf("\r\nSorry, you are currently under protection and can not attack.\r\n");
+				} else {
+					addr = select_bbs(1);
+					if (addr != NULL) {
+						if (select_ibbs_player(addr, msg.victim_name) == 0) {
+							msg.type = 2;
+							strcpy(msg.from, InterBBSInfo.myNode->name);
+							strcpy(msg.player_name, player->gamename);
+							msg.score = 0;
+							msg.plunder_credits = 0;
+							msg.plunder_food = 0;
+							msg.plunder_people = 0;
+							msg.created = time(NULL);
+							if (player->troops > 0) {
 								while (1) {
-									od_printf("\r\nSend how many generals? (MAX %d) ", player->generals);
+									od_printf("\r\nSend how many troops? (MAX %d) ", player->troops);
 									od_input_str(buffer, 8, '0', '9');
 									if (strlen(buffer) > 0) {
 										i = atoi(buffer);
-										if (i > player->generals) {
+										if (i > player->troops) {
 											od_printf("\r\nYou don't have that many!\r\n");
-										} else {
-											od_printf("\r\nSending %d generals.\r\n", i);
-											msg.generals = i;
-											player->generals -= i;
+										} else if (i > 0) {
+											od_printf("\r\nSending %d troops.\r\n", i);
+											msg.troops = i;
+											player->troops -= i;
 											break;
+										} else {
+											od_printf("\r\nYou must send at least 1 troop.\r\n");
 										}
 									}
 								}
 							} else {
-								msg.generals = 0;
+								od_printf("\r\nYou have no troops!\r\n");
 							}
-							if (player->fighters > 0) {
-								while (1) {
-									od_printf("\r\nSend how many fighters? (MAX %d) ", player->fighters);
-									od_input_str(buffer, 8, '0', '9');
-									if (strlen(buffer) > 0) {
-										i = atoi(buffer);
-										if (i > player->fighters) {
-											od_printf("\r\nYou don't have that many!\r\n");
-										} else {
-											od_printf("\r\nSending %d fighters.\r\n", i);
-											msg.fighters = i;
-											player->fighters -= i;
-											break;
+							if (msg.troops > 0) {
+								if (player->generals > 0) {
+									while (1) {
+										od_printf("\r\nSend how many generals? (MAX %d) ", player->generals);
+										od_input_str(buffer, 8, '0', '9');
+										if (strlen(buffer) > 0) {
+											i = atoi(buffer);
+											if (i > player->generals) {
+												od_printf("\r\nYou don't have that many!\r\n");
+											} else {
+												od_printf("\r\nSending %d generals.\r\n", i);
+												msg.generals = i;
+												player->generals -= i;
+												break;
+											}
 										}
 									}
+								} else {
+									msg.generals = 0;
 								}
-							} else {
-								msg.fighters = 0;
-							}
-							// send message
-							if (IBSend(&InterBBSInfo, addr, &msg, sizeof(ibbsmsg_t)) != eSuccess) {
-								player->troops += msg.troops;
-								player->generals += msg.generals;
-								player->fighters += msg.fighters;
-								od_printf("Your armarda failed to take off. Your forces have been returned.\r\n");
+								if (player->fighters > 0) {
+									while (1) {
+										od_printf("\r\nSend how many fighters? (MAX %d) ", player->fighters);
+										od_input_str(buffer, 8, '0', '9');
+										if (strlen(buffer) > 0) {
+											i = atoi(buffer);
+											if (i > player->fighters) {
+												od_printf("\r\nYou don't have that many!\r\n");
+											} else {
+												od_printf("\r\nSending %d fighters.\r\n", i);
+												msg.fighters = i;
+												player->fighters -= i;
+												break;
+											}
+										}
+									}
+								} else {
+									msg.fighters = 0;
+								}
+								// send message
+								if (IBSend(&InterBBSInfo, addr, &msg, sizeof(ibbsmsg_t)) != eSuccess) {
+									player->troops += msg.troops;
+									player->generals += msg.generals;
+									player->fighters += msg.fighters;
+									od_printf("Your armarda failed to take off. Your forces have been returned.\r\n");
+								}
 							}
 						}
 					}
