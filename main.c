@@ -426,7 +426,7 @@ void unseen_ibbs_msgs(player_t *player) {
 			ptr = localtime(&msg[i]->date);
 
 			for (j=0;j<InterBBSInfo.otherNodeCount;j++) {
-				if (strcmp(InterBBSInfo.otherNodes[j]->name, msg[i]->from) == 0) {
+				if (strcmp(InterBBSInfo.otherNodes[j]->name, msg[i]->addr) == 0) {
 					systemname = InterBBSInfo.otherNodes[j]->name;
 					break;
 				}
