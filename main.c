@@ -87,7 +87,7 @@ typedef struct ibbsscore {
 } ibbsscores_t;
 
 
-static int ini_handler(void* user, const char* section, const char* name,
+static int handler(void* user, const char* section, const char* name,
                    const char* value)
 {
 	if (strcasecmp(section, "main") == 0) {
@@ -2120,7 +2120,7 @@ int main(int argc, char **argv)
 	turns_per_day = TURNS_PER_DAY;
 	turns_in_protection = TURNS_IN_PROTECTION;
 
-	if (ini_parse("galactic.ini", ini_handler, NULL) <0) {
+	if (ini_parse("galactic.ini", handler, NULL) <0) {
 		fprintf(stderr, "Unable to load galactic.ini");
 	}
 
