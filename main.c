@@ -1362,7 +1362,7 @@ void perform_maintenance()
 						snprintf(message, 256, "Your armarda returned victorious, %d troops, %d generals and %d fighters returned with %d prisoners, %d credits and %d food.",
 							msg.troops, msg.generals, msg.fighters, msg.plunder_people, msg.plunder_credits, msg.plunder_food);
 
-					} else if (msg.sore == 0) {
+					} else if (msg.score == 0) {
 						snprintf(message, 256, "Your armarda returned defeated, %d troops, %d generals and %d fighters returned.",
 							msg.troops, msg.generals, msg.fighters);
 					} else {
@@ -2120,7 +2120,7 @@ int main(int argc, char **argv)
 	turns_per_day = TURNS_PER_DAY;
 	turns_in_protection = TURNS_IN_PROTECTION;
 
-	if (ini_parse("galactic.ini", ini_handler, &conf) <0) {
+	if (ini_parse("galactic.ini", ini_handler, NULL) <0) {
 		fprintf(stderr, "Unable to load galactic.ini");
 	}
 
