@@ -1,7 +1,9 @@
 # Galactic Dynasty
 
-Win32 [![Build Status](http://magickabbs.com:8080/buildStatus/icon?job=GalacticDynasty-Win32)](http://magickabbs.com:8080/job/GalacticDynasty-Win32)
-Linux [![Build Status](http://magickabbs.com:8080/buildStatus/icon?job=GalacticDynasty-Linux)](http://magickabbs.com:8080/job/GalacticDynasty-Linux)
+Build Status:
+
+ * Win32 [![Build Status](http://magickabbs.com:8080/buildStatus/icon?job=GalacticDynasty-Win32)](http://magickabbs.com:8080/job/GalacticDynasty-Win32)
+ * Linux [![Build Status](http://magickabbs.com:8080/buildStatus/icon?job=GalacticDynasty-Linux)](http://magickabbs.com:8080/job/GalacticDynasty-Linux)
 
 Galactic Dynasty is a BBS Door Game for Windows and Linux, similar to Solar Realms Elite
 but much simpler and with InterBBS support.
