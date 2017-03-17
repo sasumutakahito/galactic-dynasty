@@ -15,7 +15,7 @@
 #define TURNS_PER_DAY 5
 #define TURNS_IN_PROTECTION 0
 #if _MSC_VER
-#include <Windows.h>
+#include <windows.h>
 #define snprintf _snprintf
 #define strcasecmp _stricmp
 #endif
