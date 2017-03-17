@@ -15,6 +15,7 @@
 #define TURNS_PER_DAY 5
 #define TURNS_IN_PROTECTION 0
 #if _MSC_VER
+#include <Windows.h>
 #define snprintf _snprintf
 #define strcasecmp _stricmp
 #endif
@@ -2116,8 +2117,18 @@ int main(int argc, char **argv)
 	struct tm *ptr;
 	char c;
 	int i;
+	struct stat s;
 
 	srand(time(NULL));
+
+	if (stat("users.db3", &s) != 0) {
+#ifdef _MSC_VER
+		MessageBox(0, "Unable to find users.db3, have you run reset.bat?\nAre you running from the Galactic Dynasty directory?\n", "Error", 0);
+#else
+		fprintf(stderr, "Unable to find users.db3, have you run reset.sh?\nAre you running from the Galactic Dynasty directory?\n");
+#endif
+		exit(0);
+	}
 
 	if (IBReadConfig(&InterBBSInfo, "BBS.CFG")!= eSuccess) {
 		interBBSMode = 0;
