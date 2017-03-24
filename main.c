@@ -58,7 +58,7 @@ typedef struct message {
 	int id;
 	char to[17];
 	char from[17];
-	char addr[40];
+	int addr;
 	int system;
 	time_t date;
 	int seen;
@@ -67,7 +67,7 @@ typedef struct message {
 
 typedef struct ibbsmsg {
 	int32_t type;
-	char from[40];
+	int from;
 	char player_name[17];
 	char victim_name[17];
 	int32_t score;
@@ -97,11 +97,29 @@ static int handler(void* user, const char* section, const char* name,
 		} else if (strcasecmp(name, "turns in protection") == 0) {
 			turns_in_protection = atoi(value);
 		}
+	} else if (strcasecmp(section, "interbbs") == 0) {
+		if (strcasecmp(name, "enabled") == 0) {
+			if (strcasecmp(value, "true") == 0) {
+				interBBSMode = 1;
+			} else {
+				interBBSMode = 0;
+			}
+		} else if (strcasecmp(name, "system name") == 0) {
+			strncpy(InterBBSInfo.myNode->name, value, SYSTEM_NAME_CHARS);
+		} else if (strcasecmp(name, "league number") == 0) {
+			InterBBSInfo.league = atoi(value);
+		} else if (strcasecmp(name, "node number") == 0) {
+			InterBBSInfo.myNode->nodeNumber = atoi(value);
+		} else if (strcasecmp(name, "file inbox") == 0) {
+			strncpy(InterBBSInfo.myNode->filebox, value, PATH_MAX);
+		} else if (strcasecmp(name, "default outbox") == 0) {
+			strncpy(InterBBSInfo.defaultFilebox, value, PATH_MAX);
+		}
 	}
 	return 1;
 }
 
-char *select_bbs(int type) {
+int select_bbs(int type) {
 	int i;
 	char buffer[8];
 
@@ -118,7 +136,7 @@ char *select_bbs(int type) {
 		od_input_str(buffer, 8, '0', '9');
 		i = atoi(buffer);
 		if (i <= 0) {
-			return NULL;
+			return 256;
 		}
 		if (i <= InterBBSInfo.otherNodeCount) {
 			if (type == 1) {
@@ -126,12 +144,12 @@ char *select_bbs(int type) {
 			} else {
 				od_printf(" Sending a message to %s!\r\n", InterBBSInfo.otherNodes[i-1]->name);
 			}
-			return InterBBSInfo.otherNodes[i-1]->name;
+			return InterBBSInfo.otherNodes[i-1]->nodeNumber;
 		}
 	}
 }
 
-int select_ibbs_player(char *addr, char *player_name) {
+int select_ibbs_player(int addr, char *player_name) {
 	int rc;
 	sqlite3_stmt *stmt;
 	sqlite3 *db;
@@ -153,9 +171,9 @@ int select_ibbs_player(char *addr, char *player_name) {
 	count = 0;
 	names = NULL;
 
-	snprintf(sqlbuffer, 256, "SELECT gamename FROM scores WHERE address LIKE ?;");
+	snprintf(sqlbuffer, 256, "SELECT gamename FROM scores WHERE address = ?;");
 	sqlite3_prepare_v2(db, sqlbuffer, strlen(sqlbuffer) + 1, &stmt, NULL);
-	sqlite3_bind_text(stmt, 1, addr, strlen(addr) + 1, SQLITE_STATIC);
+	sqlite3_bind_int(stmt, 1, addr);
 	rc = sqlite3_step(stmt);
 	while (rc == SQLITE_ROW) {
 		if (names == NULL) {
@@ -403,7 +421,7 @@ void unseen_ibbs_msgs(player_t *player) {
 		msg[msg_count]->id = sqlite3_column_int(stmt, 0);
 		strncpy(msg[msg_count]->to, (const char *)sqlite3_column_text(stmt, 1), 17);
 		strncpy(msg[msg_count]->from, (const char *)sqlite3_column_text(stmt, 2), 17);
-		strncpy(msg[msg_count]->addr, (const char *)sqlite3_column_text(stmt, 3), 40);
+		msg[msg_count]->addr = sqlite3_column_int(stmt, 3);
 		msg[msg_count]->date = sqlite3_column_int(stmt, 4);
 		msg[msg_count]->seen = sqlite3_column_int(stmt, 5);
 		strncpy(msg[msg_count]->body, (const char *)sqlite3_column_text(stmt, 6), 256);
@@ -427,7 +445,7 @@ void unseen_ibbs_msgs(player_t *player) {
 			ptr = localtime(&msg[i]->date);
 
 			for (j=0;j<InterBBSInfo.otherNodeCount;j++) {
-				if (strcmp(InterBBSInfo.otherNodes[j]->name, msg[i]->addr) == 0) {
+				if (InterBBSInfo.otherNodes[j]->nodeNumber == msg[i]->addr) {
 					systemname = InterBBSInfo.otherNodes[j]->name;
 					break;
 				}
@@ -660,7 +678,7 @@ void build_interbbs_scorefile()
 
 		scores[player_count] = (ibbsscores_t *)malloc(sizeof(ibbsscores_t));
 		strncpy(scores[player_count]->player_name, (char *)sqlite3_column_text(stmt, 0),  17);
-		strcpy(scores[player_count]->bbs_name, "Local Player");
+		strcpy(scores[player_count]->bbs_name, InterBBSInfo.myNode->name);
 		scores[player_count]->score = sqlite3_column_int(stmt, 1);
 		player_count++;
 		rc = sqlite3_step(stmt);
@@ -1000,7 +1018,7 @@ void save_player(player_t *player) {
 	build_scorefile();
 }
 
-int do_interbbs_battle(char *victim, char *attacker, char *from, int troops, int generals, int fighters, ibbsmsg_t *msg)
+int do_interbbs_battle(char *victim, char *attacker, int from, int troops, int generals, int fighters, ibbsmsg_t *msg)
 {
 	int plunder_people;
 	int plunder_credits;
@@ -1023,7 +1041,7 @@ int do_interbbs_battle(char *victim, char *attacker, char *from, int troops, int
 	memset(bbs_name, 0, 40);
 
 	for (i=0;i<InterBBSInfo.otherNodeCount;i++) {
-		if (strcmp(from, InterBBSInfo.otherNodes[i]->name) == 0) {
+		if (from == InterBBSInfo.otherNodes[i]->nodeNumber) {
 			strncpy(bbs_name, InterBBSInfo.otherNodes[i]->name, 40);
 			break;
 		}
@@ -1035,7 +1053,7 @@ int do_interbbs_battle(char *victim, char *attacker, char *from, int troops, int
 
 	if (victim_player->total_turns <= turns_in_protection) {
 		msg->type = 3;
-		strcpy(msg->from, InterBBSInfo.myNode->name);
+		msg->from = InterBBSInfo.myNode->nodeNumber;
 		strcpy(msg->player_name, attacker);
 		strcpy(msg->victim_name, victim);
 
@@ -1121,7 +1139,7 @@ int do_interbbs_battle(char *victim, char *attacker, char *from, int troops, int
 	send_message(victim_player, NULL, message);
 
 	msg->type = 3;
-	strcpy(msg->from, InterBBSInfo.myNode->name);
+	msg->from = InterBBSInfo.myNode->nodeNumber;
 	strcpy(msg->player_name, attacker);
 	strcpy(msg->victim_name, victim);
 
@@ -1311,7 +1329,7 @@ void perform_maintenance()
 				snprintf(sqlbuffer, 256, "SELECT id, last FROM scores WHERE gamename=? and address=?");
 				sqlite3_prepare_v2(db, sqlbuffer, strlen(sqlbuffer) + 1, &stmt, NULL);
 				sqlite3_bind_text(stmt, 1, msg.player_name, strlen(msg.player_name) + 1, SQLITE_STATIC);
-				sqlite3_bind_text(stmt, 2, msg.from, strlen(msg.from) + 1, SQLITE_STATIC);
+				sqlite3_bind_int(stmt, 2, msg.from);
 
 				rc = sqlite3_step(stmt);
 
@@ -1332,7 +1350,7 @@ void perform_maintenance()
 					sqlite3_finalize(stmt);
 					snprintf(sqlbuffer, 256, "INSERT INTO scores (address, gamename, score, last) VALUES(?, ?, ?, ?)");
 					sqlite3_prepare_v2(db, sqlbuffer, strlen(sqlbuffer) + 1, &stmt, NULL);
-					sqlite3_bind_text(stmt, 1, msg.from, strlen(msg.from) + 1, SQLITE_STATIC);
+					sqlite3_bind_int(stmt, 1, msg.from);
 					sqlite3_bind_text(stmt, 2, msg.player_name, strlen(msg.player_name) + 1, SQLITE_STATIC);
 					sqlite3_bind_int(stmt, 3, msg.score);
 					sqlite3_bind_int(stmt, 4, msg.created);
@@ -1388,7 +1406,7 @@ void perform_maintenance()
 				sqlite3_prepare_v2(db, sqlbuffer, strlen(sqlbuffer) + 1, &stmt, NULL);
 				sqlite3_bind_text(stmt, 1, msg.victim_name, strlen(msg.victim_name) + 1, SQLITE_STATIC);
 				sqlite3_bind_text(stmt, 2, msg.player_name, strlen(msg.player_name) + 1, SQLITE_STATIC);
-				sqlite3_bind_text(stmt, 3, msg.from, strlen(msg.from) + 1, SQLITE_STATIC);
+				sqlite3_bind_int(stmt, 3, msg.from);
 				sqlite3_bind_int(stmt, 4, msg.created);
 				sqlite3_bind_int(stmt, 5, 0);
 				sqlite3_bind_text(stmt, 6, msg.message, strlen(msg.message) + 1, SQLITE_STATIC);
@@ -1449,7 +1467,7 @@ void perform_maintenance()
 				if (player->last_score != calculate_score(player)) {
 					memset(&msg, 0, sizeof(ibbsmsg_t));
 					msg.type = 1;
-					strcpy(msg.from, InterBBSInfo.myNode->name);
+					msg.from = InterBBSInfo.myNode->nodeNumber;
 					strcpy(msg.player_name, player->gamename);
 					msg.score = calculate_score(player);
 					msg.created = time(NULL);
@@ -1536,7 +1554,7 @@ void game_loop(player_t *player)
 	char message[256];
 	char buffer[8];
 	ibbsmsg_t msg;
-	char *addr;
+	int addr;
 
 	player_t *victim;
 
@@ -1590,7 +1608,7 @@ void game_loop(player_t *player)
 					break;
 				case '2':
 					addr = select_bbs(2);
-					if (addr != NULL) {
+					if (addr != 256) {
 						memset(&msg, 0, sizeof(ibbsmsg_t));
 						if (select_ibbs_player(addr, msg.victim_name) == 0) {
 							od_printf("Type your message (256 chars max)\r\n");
@@ -1598,7 +1616,7 @@ void game_loop(player_t *player)
 							if (strlen(msg.message) > 0) {
 								msg.type = 4;
 								strcpy(msg.player_name, player->gamename);
-								strcpy(msg.from, InterBBSInfo.myNode->name);
+								msg.from = InterBBSInfo.myNode->nodeNumber;
 								msg.created = time(NULL);
 								if (IBSend(&InterBBSInfo, addr, &msg, sizeof(ibbsmsg_t)) != eSuccess) {
 									od_printf("\r\nMessage failed to send.\r\n");
@@ -1936,10 +1954,10 @@ void game_loop(player_t *player)
 					od_printf("\r\nSorry, you are currently under protection and can not attack.\r\n");
 				} else {
 					addr = select_bbs(1);
-					if (addr != NULL) {
+					if (addr != 256) {
 						if (select_ibbs_player(addr, msg.victim_name) == 0) {
 							msg.type = 2;
-							strcpy(msg.from, InterBBSInfo.myNode->name);
+							msg.from = InterBBSInfo.myNode->nodeNumber;
 							strcpy(msg.player_name, player->gamename);
 							msg.score = 0;
 							msg.plunder_credits = 0;
@@ -2130,17 +2148,25 @@ int main(int argc, char **argv)
 		exit(0);
 	}
 
-	if (IBReadConfig(&InterBBSInfo, "BBS.CFG")!= eSuccess) {
-		interBBSMode = 0;
-	} else {
-		interBBSMode = 1;
-	}
+
 
 	turns_per_day = TURNS_PER_DAY;
 	turns_in_protection = TURNS_IN_PROTECTION;
 
+	InterBBSInfo.myNode = (tOtherNode *)malloc(sizeof(tOtherNode));
+	if (InterBBSInfo.myNode == NULL) {
+		fprintf(stderr, "Out of memory!\n");
+		exit(-1);
+	}
+
 	if (ini_parse("galactic.ini", handler, NULL) <0) {
 		fprintf(stderr, "Unable to load galactic.ini");
+	}
+
+	if (interBBSMode == 1) {
+		if (IBReadConfig(&InterBBSInfo, "BBS.CFG")!= eSuccess) {
+			interBBSMode = 0;
+		}
 	}
 
 #if _MSC_VER

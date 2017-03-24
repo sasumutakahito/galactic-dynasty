@@ -39,19 +39,20 @@ typedef int tBool;
 #endif
 
 typedef struct {
+    uint32_t nodeNumber;
     char filebox[PATH_MAX + 1];
     char name[SYSTEM_NAME_CHARS + 1];
 } tOtherNode;
 
 typedef struct {
     uint32_t league;
-    uint32_t nodeNo;
+    char defaultFilebox[PATH_MAX + 1];
     tOtherNode *myNode;
     tOtherNode **otherNodes;
     int otherNodeCount;
 } tIBInfo;
 
-tIBResult IBSend(tIBInfo *pInfo, char *pszDestNode, void *pBuffer, uint32_t nBufferSize);
+tIBResult IBSend(tIBInfo *pInfo, int pszDestNode, void *pBuffer, uint32_t nBufferSize);
 tIBResult IBSendAll(tIBInfo *pInfo, void *pBuffer, uint32_t nBufferSize);
 tIBResult IBGet(tIBInfo *pInfo, void *pBuffer, uint32_t nMaxBufferSize);
 tIBResult IBReadConfig(tIBInfo *pInfo, char *pszConfigFile);

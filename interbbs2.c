@@ -14,14 +14,11 @@
 #include <winsock2.h>
 #endif // _MSC_VER
 
-#define NUM_KEYWORDS 6
+#define NUM_KEYWORDS 3
 
-char *apszKeyWord[NUM_KEYWORDS] = {"SystemName",
-                                   "FileInbox",
-                                   "LeagueNo",
-                                   "NodeNo",
-                                   "LinkName",
-                                   "LinkFileOutbox"};
+char *apszKeyWord[NUM_KEYWORDS] = {"LinkNodeNumber",
+                                   "LinkFileOutbox",
+                                   "LinkNodeName"};
 
 int packetno = 0;
 
@@ -29,8 +26,7 @@ tIBResult ProcessFile(tIBInfo *pInfo, char *filename, void *pBuffer, int nBuffer
     char version[6];
     FILE *fptr;
     memset(version, 0, 6);
-    unsigned char destlen;
-    char *destination;
+    uint32_t destination;
     uint32_t memsize;
     int forward = 0;
     tIBResult result;
@@ -51,25 +47,17 @@ tIBResult ProcessFile(tIBInfo *pInfo, char *filename, void *pBuffer, int nBuffer
         return eBadParameter;
     }
 
-    fread(&destlen, sizeof(unsigned char), 1, fptr);
+ 
+    fread(&destination, 1, sizeof(uint32_t), fptr);
+    destination = ntohl(destination);
 
-    destination = (char *)malloc(destlen + 1);
-    if (!destination) {
-        fclose(fptr);
-        return eNoMemory;
-    }
-    memset(destination, 0, destlen + 1);
-
-    fread(destination, 1, destlen, fptr);
-
-    if (strcasecmp(destination, pInfo->myNode->name) != 0) {
+    if (destination != pInfo->myNode->nodeNumber) {
         forward = 1;
     }
     fread(&memsize, sizeof(uint32_t), 1, fptr);
     memsize = ntohl(memsize);
 
     if (nBufferSize < memsize) {
-        free(destination);
         fclose(fptr);
         return eBadParameter;
     }
@@ -78,19 +66,16 @@ tIBResult ProcessFile(tIBInfo *pInfo, char *filename, void *pBuffer, int nBuffer
     if (forward) {
         result = IBSend(pInfo, destination, pBuffer, memsize);
 
-	if (result == eSuccess) {
+	    if (result == eSuccess) {
             fclose(fptr);
-            free(destination);
-	    unlink(filename);
+	        unlink(filename);
             return eForwarded;
         }
         fclose(fptr);
-        free(destination);
         return result;
     }
 
     fclose(fptr);
-    free(destination);
     unlink(filename);
 
     return eSuccess;
@@ -128,7 +113,9 @@ tIBResult IBSendAll(tIBInfo *pInfo, void *pBuffer, uint32_t nBufferSize) {
     int result;
 
     for (i=0;i<pInfo->otherNodeCount;i++) {
-        result = IBSend(pInfo, pInfo->otherNodes[i]->name, pBuffer, nBufferSize);
+        if (pInfo->otherNodes[i]->nodeNumber == pInfo->myNode->nodeNumber)
+            continue;
+        result = IBSend(pInfo, pInfo->otherNodes[i]->nodeNumber, pBuffer, nBufferSize);
         if (result != eSuccess) {
             return result;
         }
@@ -137,7 +124,7 @@ tIBResult IBSendAll(tIBInfo *pInfo, void *pBuffer, uint32_t nBufferSize) {
     return eSuccess;
 }
 
-tIBResult IBSend(tIBInfo *pInfo, char *pszDestNode, void *pBuffer, uint32_t nBufferSize) {
+tIBResult IBSend(tIBInfo *pInfo, int pszDestNode, void *pBuffer, uint32_t nBufferSize) {
     struct stat s;
     int i;
     char filename[PATH_MAX];
@@ -148,7 +135,7 @@ tIBResult IBSend(tIBInfo *pInfo, char *pszDestNode, void *pBuffer, uint32_t nBuf
     int minutes;
 
     for (i=0;i<pInfo->otherNodeCount;i++) {
-        if (!strcmp(pInfo->otherNodes[i]->name, pszDestNode)) {
+        if (pInfo->otherNodes[i]->nodeNumber == pszDestNode) {
             dest = pInfo->otherNodes[i];
             break;
         }
@@ -168,7 +155,7 @@ tIBResult IBSend(tIBInfo *pInfo, char *pszDestNode, void *pBuffer, uint32_t nBuf
         return eBadParameter;
     }
 
-    snprintf(filename, PATH_MAX, "%s%s%04X%02X%02X.%s", dest->filebox, PATH_SEP, minutes, pInfo->nodeNo, packetno, FILEEXT);
+    snprintf(filename, PATH_MAX, "%s%s%04X%02X%02X.%s", dest->filebox, PATH_SEP, minutes, pInfo->myNode->nodeNumber, packetno, FILEEXT);
     packetno++;
 
     fptr = fopen(filename, "wb");
@@ -176,13 +163,12 @@ tIBResult IBSend(tIBInfo *pInfo, char *pszDestNode, void *pBuffer, uint32_t nBuf
         return eFileOpenError;
     }
 
-    unsigned char name_size = strlen(dest->name);
     uint32_t nwNbufferSize = htonl(nBufferSize);
     uint32_t leagueno = htonl(pInfo->league);
+    uint32_t destn = htonl(pszDestNode);
     fwrite(VERSION, 5, 1, fptr);
     fwrite(&leagueno, sizeof(uint32_t), 1, fptr);
-    fwrite(&name_size, sizeof(unsigned char), 1, fptr);
-    fwrite(dest->name, name_size, 1, fptr);
+    fwrite(&destn, sizeof(uint32_t), 1, fptr);
     fwrite(&nwNbufferSize, sizeof(uint32_t), 1, fptr);
     fwrite(pBuffer, nBufferSize, 1, fptr);
     fclose(fptr);
@@ -200,21 +186,6 @@ void ProcessConfigLine(int nKeyword, char *pszParameter, void *pCallbackData)
    switch(nKeyword)
       {
       case 0:
-         strncpy(pInfo->myNode->name, pszParameter, SYSTEM_NAME_CHARS);
-         pInfo->myNode->name[SYSTEM_NAME_CHARS] = '\0';
-         break;
-
-      case 1:
-         strncpy(pInfo->myNode->filebox, pszParameter, PATH_MAX);
-         pInfo->myNode->filebox[PATH_MAX] = '\0';
-         break;
-      case 2:
-        pInfo->league = atoi(pszParameter);
-        break;
-      case 3:
-        pInfo->nodeNo = atoi(pszParameter);
-        break;
-      case 4:
          if(pInfo->otherNodeCount == 0)
             {
             pInfo->otherNodes = (tOtherNode **)malloc(sizeof(tOtherNode *));
@@ -236,18 +207,31 @@ void ProcessConfigLine(int nKeyword, char *pszParameter, void *pCallbackData)
          if (!pInfo->otherNodes[pInfo->otherNodeCount]) {
              break;
          }
-         strncpy(pInfo->otherNodes[pInfo->otherNodeCount]->name, pszParameter, SYSTEM_NAME_CHARS);
-         pInfo->otherNodes[pInfo->otherNodeCount]->name[SYSTEM_NAME_CHARS] = '\0';
+         
+         pInfo->otherNodes[pInfo->otherNodeCount]->nodeNumber = atoi(pszParameter);
+
+         strncpy(pInfo->otherNodes[pInfo->otherNodeCount]->filebox, pInfo->defaultFilebox, PATH_MAX);
+         pInfo->otherNodes[pInfo->otherNodeCount]->filebox[PATH_MAX] = '\0';
+
+
          ++pInfo->otherNodeCount;
          break;
 
-      case 5:
+      case 1:
          if(pInfo->otherNodeCount != 0)
             {
             strncpy(pInfo->otherNodes[pInfo->otherNodeCount - 1]->filebox, pszParameter, PATH_MAX);
             pInfo->otherNodes[pInfo->otherNodeCount - 1]->filebox[PATH_MAX] = '\0';
             }
          break;
+      case 2:
+         if(pInfo->otherNodeCount != 0)
+            {
+            strncpy(pInfo->otherNodes[pInfo->otherNodeCount]->name, pszParameter, SYSTEM_NAME_CHARS);
+            pInfo->otherNodes[pInfo->otherNodeCount]->name[SYSTEM_NAME_CHARS] = '\0';
+            
+            }
+         break;        
       }
    }
 
@@ -349,10 +333,7 @@ tBool ProcessConfigFile(char *pszFileName, int nKeyWords, char **papszKeyWord,
    /* Set default values for pInfo settings */
    pInfo->otherNodeCount = 0;
    pInfo->otherNodes = NULL;
-   pInfo->myNode = (tOtherNode *)malloc(sizeof(tOtherNode));
-   if (!pInfo->myNode) {
-       return eNoMemory;
-   }
+
    /* Process configuration file */
    if(!ProcessConfigFile(pszConfigFile, NUM_KEYWORDS, apszKeyWord,
                          ProcessConfigLine, (void *)pInfo))
