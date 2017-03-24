@@ -227,8 +227,8 @@ void ProcessConfigLine(int nKeyword, char *pszParameter, void *pCallbackData)
       case 2:
          if(pInfo->otherNodeCount != 0)
             {
-            strncpy(pInfo->otherNodes[pInfo->otherNodeCount]->name, pszParameter, SYSTEM_NAME_CHARS);
-            pInfo->otherNodes[pInfo->otherNodeCount]->name[SYSTEM_NAME_CHARS] = '\0';
+            strncpy(pInfo->otherNodes[pInfo->otherNodeCount - 1]->name, pszParameter, SYSTEM_NAME_CHARS);
+            pInfo->otherNodes[pInfo->otherNodeCount - 1]->name[SYSTEM_NAME_CHARS] = '\0';
             
             }
          break;        
