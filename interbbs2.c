@@ -18,7 +18,7 @@
 
 char *apszKeyWord[NUM_KEYWORDS] = {"LinkNodeNumber",
                                    "LinkFileOutbox",
-                                   "LinkNodeName"};
+                                   "LinkName"};
 
 int packetno = 0;
 
