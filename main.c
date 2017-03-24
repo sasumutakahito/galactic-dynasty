@@ -714,7 +714,7 @@ void build_interbbs_scorefile()
 		strncpy(scores[player_count]->player_name, (char *)sqlite3_column_text(stmt, 0),  17);
 
 		for (i=0;i<InterBBSInfo.otherNodeCount;i++) {
-			if (strcmp((char *)sqlite3_column_text(stmt, 1), InterBBSInfo.otherNodes[i]->name) == 0) {
+			if (sqlite3_column_int(stmt, 1) == InterBBSInfo.otherNodes[i]->nodeNumber) {
 				strncpy(scores[player_count]->bbs_name, InterBBSInfo.otherNodes[i]->name, 40);
 				break;
 			}
