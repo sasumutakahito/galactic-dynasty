@@ -106,14 +106,17 @@ static int handler(void* user, const char* section, const char* name,
 			}
 		} else if (strcasecmp(name, "system name") == 0) {
 			strncpy(InterBBSInfo.myNode->name, value, SYSTEM_NAME_CHARS);
+			InterBBSInfo.myNode->name[SYSTEM_NAME_CHARS] = '\0';
 		} else if (strcasecmp(name, "league number") == 0) {
 			InterBBSInfo.league = atoi(value);
 		} else if (strcasecmp(name, "node number") == 0) {
 			InterBBSInfo.myNode->nodeNumber = atoi(value);
 		} else if (strcasecmp(name, "file inbox") == 0) {
 			strncpy(InterBBSInfo.myNode->filebox, value, PATH_MAX);
+			InterBBSInfo.myNode->filebox[PATH_MAX] = '\0';
 		} else if (strcasecmp(name, "default outbox") == 0) {
 			strncpy(InterBBSInfo.defaultFilebox, value, PATH_MAX);
+			InterBBSInfo.defaultFilebox[PATH_MAX] = '\0';
 		}
 	}
 	return 1;
