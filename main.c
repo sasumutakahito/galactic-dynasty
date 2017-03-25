@@ -1698,7 +1698,7 @@ void game_loop(player_t *player)
 			if (interBBSMode == 1) {
 				od_printf("  (2) Send an inter-galactic message\r\n");
 			}
-			od_printf("  (D) Done\r\n");
+			od_printf("  (`bright green`D`white`) Done\r\n");
 			od_printf("`bright cyan`============================================================`white`\r\n");
 			if (interBBSMode == 1) {
 				c = od_get_answer("12dD\r");
@@ -1754,7 +1754,7 @@ void game_loop(player_t *player)
 		// Troops require money
 		troop_wages = player->troops * 10 + player->generals * 15 + player->fighters * 20 + player->defence_stations * 20;
 		od_printf("Your military requires `bright yellow`%d`white` credits in wages.\r\n", troop_wages);
-		od_printf("Pay them (`bright yellow`%d`white`) : ", (troop_wages < player->credits ? troop_wages : player->credits));
+		od_printf("Pay them (`bright green`%d`white`) : ", (troop_wages < player->credits ? troop_wages : player->credits));
 
 		od_input_str(buffer, 8, '0', '9');
 
@@ -1776,7 +1776,7 @@ void game_loop(player_t *player)
 		// People require food
 		citizen_hunger = (player->population / 10) + 1;
 		od_printf("Your citizens need `bright yellow`%d`white` tonnes of food.\r\n", citizen_hunger);
-		od_printf("Feed them (`bright yellow`%d`white`) : ", (citizen_hunger < player->food ? citizen_hunger : player->food));
+		od_printf("Feed them (`bright green`%d`white`) : ", (citizen_hunger < player->food ? citizen_hunger : player->food));
 
 		od_input_str(buffer, 8, '0', '9');
 
@@ -1800,17 +1800,17 @@ void game_loop(player_t *player)
 			// do you want to buy anything
 			od_printf("`bright green`============================================================\r\n");
 			od_printf("`white` Buy Stuff                 Your funds: %d credits\r\n", player->credits);
-			od_printf("`bright green`=============================`green`[`white`Price`green`]`bright green`===`green`[`white`You Have`green`]`bright green`===========\r\n");
-			od_printf("`white` (1) Troops .....................100    %d\r\n", player->troops);
-			od_printf(" (2) Generals ...................500    %d\r\n", player->generals);
-			od_printf(" (3) Fighters ..................1000    %d\r\n", player->fighters);
-			od_printf(" (4) Defence Stations ..........1000    %d\r\n", player->defence_stations);
-			od_printf(" (5) Command Ship Components ..10000    %d%%\r\n", player->command_ship);
-			od_printf(" (6) Colonize Planets ..........2000    %d\r\n", player->planets_ore + player->planets_food + player->planets_industrial + player->planets_military);
-			od_printf(" (7) Food .......................100    %d\r\n", player->food);
-			od_printf(" (8) Spies .....................5000    %d\r\n", player->spies);
+			od_printf("`bright green`============================`green`[`white`Price`green`]`bright green`=`green`[`white`You Have`green`]`bright green`=[`white`Can Afford`green`]=\r\n");
+			od_printf("`white` (1) Troops ...................100    %6d     (%6d)\r\n", player->troops, player->credits / 100);
+			od_printf(" (2) Generals .................500    %6d     (%6d)\r\n", player->generals, player->credits / 500);
+			od_printf(" (3) Fighters ................1000    %6d     (%6d)\r\n", player->fighters, player->credits / 1000);
+			od_printf(" (4) Defence Stations ........1000    %6d     (%6d)\r\n", player->defence_stations, player->credits / 1000);
+			od_printf(" (5) Command Ship Components 10000    %6d%%    (%5d%%)\r\n", player->command_ship, player->credits / 10000);
+			od_printf(" (6) Colonize Planets ........2000    %6d     (%6d)\r\n", player->planets_ore + player->planets_food + player->planets_industrial + player->planets_military, player->credits / 2000);
+			od_printf(" (7) Food .....................100    %6d     (%6d)\r\n", player->food, player->credits / 100);
+			od_printf(" (8) Spies ...................5000    %6d     (%6d)\r\n", player->spies, player->credits / 5000);
 			od_printf("\r\n");
-			od_printf(" (D) Done\r\n");
+			od_printf(" (`bright green`D`white`) Done\r\n");
 			od_printf("`bright green`============================================================`white`\r\n");
 
 			c = od_get_answer("12345678dD\r");
@@ -1957,7 +1957,7 @@ void game_loop(player_t *player)
 			od_printf("`white` Covert Operations                 Spies: %d\r\n", player->spies);
 			od_printf("`bright magenta`=============================`magenta`[`white`Price`magenta`]`bright magenta`========================\r\n");
 			od_printf("`white` (1) Spy on someone............1000\r\n");
-			od_printf(" (D) Done\r\n");
+			od_printf(" (`bright green`D`white`) Done\r\n");
 			od_printf("`bright magenta`============================================================`white`\r\n");
 			c = od_get_answer("1dD\r");
 			switch(tolower(c)) {
@@ -1983,7 +1983,7 @@ void game_loop(player_t *player)
 			}
 		}
 		// do you want to attack anyone
-		od_printf("Do you want to launch an attack? (Y/N) ");
+		od_printf("Do you want to launch an attack? (Y/`bright green`N`white`) ");
 		c = od_get_answer("yYnN\r");
 
 		if (tolower(c) == 'y') {
@@ -2063,7 +2063,7 @@ void game_loop(player_t *player)
 			}
 		}
 		if (interBBSMode == 1) {
-			od_printf("\r\nDo you want to launch an Inter-Galactic Armarda? (Y/N) ");
+			od_printf("\r\nDo you want to launch an Inter-Galactic Armarda? (Y/`bright green`N`white`) ");
 			c = od_get_answer("YyNn\r");
 			if (tolower(c) == 'y') {
 				if (player->total_turns < turns_in_protection) {
@@ -2212,7 +2212,7 @@ void game_loop(player_t *player)
 		save_player(player);
 
 		if (player->turns_left > 0) {
-			od_printf("\r\nContinue ? (Y/N) ");
+			od_printf("\r\n`bright yellow`Continue`white` ? (`bright green`Y`white`/N) ");
 			c = od_get_answer("YyNn\r");
 			if (tolower(c) == 'n') {
 				od_printf("\r\n");
@@ -2332,19 +2332,20 @@ int main(int argc, char **argv)
 		od_printf("\r\n`white`Game Menu\r\n");
 		od_printf("`red`--------------------------------------\r\n");
 		od_printf(" `white`(`bright yellow`1`white`) Play Game\r\n");
-		od_printf(" `white`(`bright yellow`2`white`) See Status\r\n");
-		od_printf(" `white`(`bright yellow`3`white`) See Scores\r\n");
+		od_printf(" `white`(`bright yellow`2`white`) See Messages\r\n");
+		od_printf(" `white`(`bright yellow`3`white`) See Status\r\n");
+		od_printf(" `white`(`bright yellow`4`white`) See Scores\r\n");
 		if (interBBSMode == 1) {
-			od_printf(" `white`(`bright yellow`4`white`) See InterBBS Nodes\r\n");
-			od_printf(" `white`(`bright yellow`5`white`) See InterBBS Scores\r\n");
+			od_printf(" `white`(`bright yellow`5`white`) See InterBBS Nodes\r\n");
+			od_printf(" `white`(`bright yellow`6`white`) See InterBBS Scores\r\n");
 		}
 		od_printf(" `white`(`bright yellow`Q`white`) Exit Game\r\n");
 		od_printf("`red`--------------------------------------`white`\r\n");
 		od_printf("Your Choice? ");
 		if (interBBSMode == 1) {
-			c = od_get_answer("12345qQ");
+			c = od_get_answer("123456qQ");
 		} else {
-			c = od_get_answer("123qQ");
+			c = od_get_answer("1234qQ");
 		}
 		od_printf("\r\n");
 		switch (c) {
@@ -2352,23 +2353,29 @@ int main(int argc, char **argv)
 			game_loop(player);
 			break;
 		case '2':
+			unseen_msgs(player);
+			if (interBBSMode == 1) {
+				unseen_ibbs_msgs(player);
+			}
+			break;
+		case '3':
 			state_of_the_galaxy(player);
 			od_printf("\r\nPress a key to continue\r\n");
 			od_get_key(TRUE);
 			break;
-		case '3':
+		case '4':
 			od_send_file("scores.ans");
 			od_printf("\r\nPress a key to continue\r\n");
 			od_get_key(TRUE);
 			break;
-		case '4':
+		case '5':
 			for (i=0;i<InterBBSInfo.otherNodeCount;i++) {
 				od_printf("`bright green`%s`white`\r\n", InterBBSInfo.otherNodes[i]->name);
 			}
 			od_printf("\r\nPress a key to continue\r\n");
 			od_get_key(TRUE);
 			break;
-		case '5':
+		case '6':
 			od_send_file("ibbs_scores.ans");
 			od_printf("\r\nPress a key to continue\r\n");
 			od_get_key(TRUE);
