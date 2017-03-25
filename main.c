@@ -764,12 +764,51 @@ void build_interbbs_scorefile()
 			fprintf(fptr, " %-31s %-31s %13d\r\n", scores[i]->player_name, scores[i]->bbs_name, scores[i]->score);
 		}
 
-		for (i=0;i<player_count;i++) {
-			free(scores[i]);
+		fptr2 = fopen("ibbs_score_footer.ans", "r");
+		if (fptr2) {
+			c = fgetc(fptr2);
+			while(!feof(fptr2)) {
+				fputc(c, fptr);
+				c = fgetc(fptr2);
+			}
+			fclose(fptr2);
 		}
-		free(scores);
-		fclose(fptr);
+		fclose(fptr);	
 	}
+
+	fptr = fopen("ibbs_scores.asc", "w");
+
+	if (fptr) {
+		fptr2 = fopen("ibbs_score_header.asc", "r");
+		if (fptr2) {
+			c = fgetc(fptr2);
+			while(!feof(fptr2)) {
+				fputc(c, fptr);
+				c = fgetc(fptr2);
+			}
+			fclose(fptr2);
+		}
+		for (i=0;i<player_count;i++) {
+			fprintf(fptr, " %-31s %-31s %13d\r\n", scores[i]->player_name, scores[i]->bbs_name, scores[i]->score);
+		}
+
+		fptr2 = fopen("ibbs_score_footer.asc", "r");
+		if (fptr2) {
+			c = fgetc(fptr2);
+			while(!feof(fptr2)) {
+				fputc(c, fptr);
+				c = fgetc(fptr2);
+			}
+			fclose(fptr2);
+		}
+		fclose(fptr);	
+	}
+
+	for (i=0;i<player_count;i++) {
+		free(scores[i]);
+	}
+	free(scores);
+	
 }
 
 void build_scorefile()
@@ -790,13 +829,15 @@ void build_scorefile()
 
 	if (fptr) {
 		fptr2 = fopen("score_header.ans", "r");
-		c = fgetc(fptr2);
-		while(!feof(fptr2)) {
-			fputc(c, fptr);
+		if (fptr2) {
 			c = fgetc(fptr2);
-		}
+			while(!feof(fptr2)) {
+				fputc(c, fptr);
+				c = fgetc(fptr2);
+			}
 
-		fclose(fptr2);
+			fclose(fptr2);
+		}
 
 		rc = sqlite3_open("users.db3", &db);
 		if (rc) {
@@ -816,8 +857,69 @@ void build_scorefile()
 
 		sqlite3_finalize(stmt);
 		sqlite3_close(db);
+
+		fptr2 = fopen("score_footer.ans", "r");
+		if (fptr2) {
+			c = fgetc(fptr2);
+			while(!feof(fptr2)) {
+				fputc(c, fptr);
+				c = fgetc(fptr2);
+			}
+
+			fclose(fptr2);
+		}		
+		
+		fclose(fptr);
+
+
 	}
-	fclose(fptr);
+
+	fptr = fopen("scores.asc", "w");
+
+	if (fptr) {
+		fptr2 = fopen("score_header.asc", "r");
+		if (fptr2) {
+			c = fgetc(fptr2);
+			while(!feof(fptr2)) {
+				fputc(c, fptr);
+				c = fgetc(fptr2);
+			}
+
+			fclose(fptr2);
+		}
+
+		rc = sqlite3_open("users.db3", &db);
+		if (rc) {
+			// Error opening the database
+			printf("Error opening users database: %s\n", sqlite3_errmsg(db));
+			sqlite3_close(db);
+			exit(1);
+		}
+		sqlite3_busy_timeout(db, 5000);
+		snprintf(sqlbuffer, 256, "SELECT gamename FROM users;");
+		sqlite3_prepare_v2(db, sqlbuffer, strlen(sqlbuffer) + 1, &stmt, NULL);
+		while (sqlite3_step(stmt) == SQLITE_ROW) {
+			player = load_player_gn((char *)sqlite3_column_text(stmt, 0));
+			fprintf(fptr, " %-64s %13d\r\n", player->gamename, calculate_score(player));
+			free(player);
+		}
+
+		sqlite3_finalize(stmt);
+		sqlite3_close(db);
+		
+		fptr2 = fopen("score_footer.asc", "r");
+		if (fptr2) {
+			c = fgetc(fptr2);
+			while(!feof(fptr2)) {
+				fputc(c, fptr);
+				c = fgetc(fptr2);
+			}
+
+			fclose(fptr2);
+		}		
+		
+		fclose(fptr);
+	}	
 }
 
 player_t *new_player(char *bbsname) {
@@ -1599,9 +1701,9 @@ void game_loop(player_t *player)
 			od_printf("  (D) Done\r\n");
 			od_printf("`bright cyan`============================================================`white`\r\n");
 			if (interBBSMode == 1) {
-				c = od_get_answer("12dD");
+				c = od_get_answer("12dD\r");
 			} else {
-				c = od_get_answer("1dD");
+				c = od_get_answer("1dD\r");
 			}
 			switch (c) {
 				case '1':
