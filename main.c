@@ -141,6 +141,15 @@ int select_bbs(int type) {
 		if (i <= 0) {
 			return 256;
 		}
+
+		if (InterBBSInfo.otherNodes[i-1]->nodeNumber == InterBBSInfo.myNode->nodeNumber) {
+			if (type == 1) {
+				od_printf(" Cannot launch an armarda against a member of your own galaxy!\r\n");
+			} else {
+				od_printf(" Cannot launch an inter galactic message to a member of your own galaxy!\r\n");
+			}
+			return 256;
+		}
 		if (i <= InterBBSInfo.otherNodeCount) {
 			if (type == 1) {
 				od_printf(" Sending armarda to %s!\r\n", InterBBSInfo.otherNodes[i-1]->name);
