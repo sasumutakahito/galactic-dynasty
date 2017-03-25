@@ -88,7 +88,7 @@ typedef struct ibbsscore {
 	int score;
 } ibbsscores_t;
 
-void msg2ne(struct ibbsmsg_t *msg) {
+void msg2ne(ibbsmsg_t *msg) {
 	msg->type = htonl(msg->type);
 	msg->from = htonl(msg->from);
 	msg->score = htonl(msg->score);
@@ -101,7 +101,7 @@ void msg2ne(struct ibbsmsg_t *msg) {
 	msg->created = htonl(msg->created);
 }
 
-void msg2he(struct ibbsmsg_t *msg) {
+void msg2he(ibbsmsg_t *msg) {
 	msg->type = ntohl(msg->type);
 	msg->from = ntohl(msg->from);
 	msg->score = ntohl(msg->score);
