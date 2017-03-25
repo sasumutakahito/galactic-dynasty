@@ -1711,7 +1711,7 @@ void game_loop(player_t *player)
 			od_printf(" (D) Done\r\n");
 			od_printf("`bright green`============================================================`white`\r\n");
 
-			c = od_get_answer("12345678dD");
+			c = od_get_answer("12345678dD\r");
 			switch (c) {
 				case '1':
 					od_printf("How many troops do you want to buy? (MAX `bright yellow`%d`white`) ", player->credits / 100);
@@ -1841,6 +1841,7 @@ void game_loop(player_t *player)
 						}
 					}
 					break;
+				case '\r':
 				case 'd':
 				case 'D':
 					done = 1;
@@ -1856,7 +1857,7 @@ void game_loop(player_t *player)
 			od_printf("`white` (1) Spy on someone............1000\r\n");
 			od_printf(" (D) Done\r\n");
 			od_printf("`bright magenta`============================================================`white`\r\n");
-			c = od_get_answer("1dD");
+			c = od_get_answer("1dD\r");
 			switch(tolower(c)) {
 			case '1':
 				victim = select_victim(player, "Who do you want to attack", 2);
@@ -1874,13 +1875,14 @@ void game_loop(player_t *player)
 					free(victim);
 				}
 				break;
+			case '\r':
 			case 'd':
 				break;
 			}
 		}
 		// do you want to attack anyone
 		od_printf("Do you want to launch an attack? (Y/N) ");
-		c = od_get_answer("yYnN");
+		c = od_get_answer("yYnN\r");
 
 		if (tolower(c) == 'y') {
 			if (player->total_turns < turns_in_protection) {
@@ -1960,7 +1962,7 @@ void game_loop(player_t *player)
 		}
 		if (interBBSMode == 1) {
 			od_printf("\r\nDo you want to launch an Inter-Galactic Armarda? (Y/N) ");
-			c = od_get_answer("YyNn");
+			c = od_get_answer("YyNn\r");
 			if (tolower(c) == 'y') {
 				if (player->total_turns < turns_in_protection) {
 					od_printf("\r\nSorry, you are currently under protection and can not attack.\r\n");
@@ -2109,7 +2111,7 @@ void game_loop(player_t *player)
 
 		if (player->turns_left > 0) {
 			od_printf("\r\nContinue ? (Y/N) ");
-			c = od_get_answer("YyNn");
+			c = od_get_answer("YyNn\r");
 			if (tolower(c) == 'n') {
 				od_printf("\r\n");
 				break;
