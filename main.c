@@ -23,6 +23,7 @@
 
 int turns_per_day;
 int turns_in_protection;
+int full;
 
 tIBInfo InterBBSInfo;
 int interBBSMode;
@@ -113,8 +114,6 @@ void msg2he(ibbsmsg_t *msg) {
 	msg->plunder_people = ntohl(msg->plunder_people);
 	msg->created = ntohl(msg->created);
 }
-
-
 
 static int handler(void* user, const char* section, const char* name,
                    const char* value)
@@ -1445,13 +1444,39 @@ void perform_maintenance()
 	char **players;
 	player_t *player;
 	int j;
-        int k;
+    int k;
 	time_t last_score;
-        tIBResult result;
+    tIBResult result;
 	char message[256];
+	time_t lastrun;
+	time_t timenow;
+	FILE *fptr;
+
+	timenow = time(NULL);
+
+	fptr = fopen("lastrun.dat", "rb");
+
+	if (fptr) {
+		fread(&lastrun, sizeof(time_t), 1, fptr);
+		fclose(fptr);
+
+
+		if (timenow - lastrun < 60) {
+			fprintf(stderr, "Maintenance run in last 60 seconds, not running\n");
+			return;
+		}
+
+	}
+	
+	fptr = fopen("lastrun.dat", "wb");
+	if (fptr) {
+		fwrite(&timenow, sizeof(time_t), 1, fptr);		
+		fclose(fptr);
+	}
+
 	// parse all incoming messages
 	i = 0;
-        k = 0;
+    k = 0;
 	if (interBBSMode == 1) {
 		while (1) {
 		    result = IBGet(&InterBBSInfo, &msg, sizeof(ibbsmsg_t));
@@ -1464,7 +1489,7 @@ void perform_maintenance()
 				rc = sqlite3_open("interbbs.db3", &db);
 				if (rc) {
 					// Error opening the database
-					printf("Error opening interbbs database: %s\n", sqlite3_errmsg(db));
+					fprintf(stderr, "Error opening interbbs database: %s\n", sqlite3_errmsg(db));
 					sqlite3_close(db);
 					exit(1);
 				}
@@ -1561,7 +1586,7 @@ void perform_maintenance()
 				sqlite3_close(db);
 				break;
 			default:
-				printf("Unknown message type: %d\n", msg.type);
+				fprintf(stderr, "Unknown message type: %d\n", msg.type);
 				break;
 			}
 			i++;
@@ -1572,14 +1597,14 @@ void perform_maintenance()
 		    }
 		}
 
-		printf("Parsed %d inbound messages\nForwarded %d messages\n", i, k);
+		fprintf(stderr, "Parsed %d inbound messages\nForwarded %d messages\n", i, k);
 
 
 		// send all score messages
 		rc = sqlite3_open("users.db3", &db);
 		if (rc) {
 			// Error opening the database
-			printf("Error opening user database: %s\n", sqlite3_errmsg(db));
+			fprintf(stderr, "Error opening user database: %s\n", sqlite3_errmsg(db));
 			sqlite3_close(db);
 			exit(1);
 		}
@@ -2269,6 +2294,9 @@ void game_loop(player_t *player)
 }
 
 void door_quit(void) {
+	if (full == 1) {
+		perform_maintenance();
+	}
 	unlink("inuse.flg");
 }
 
@@ -2290,6 +2318,8 @@ int main(int argc, char **argv)
 	struct stat s;
 	int inuse = 0;
 	FILE *fptr;
+	
+	full = 0;
 
 	srand(time(NULL));
 
@@ -2339,9 +2369,14 @@ int main(int argc, char **argv)
 			perform_maintenance();
 			unlink("inuse.flg");
 			return 0;
-		}
-		
+		}		
 	}
+
+	for (i=0;i<strlen(lpszCmdLine);i++) {
+       	if (strncmp(&lpszCmdLine[i], "-FULL", 5) == 0 || strncmp(&lpszCmdLine[i], "/FULL", 5) == 0) {
+            full = 1;
+        } 
+	}	
 	od_parse_cmd_line(lpszCmdLine);
 #else
 	if (argc > 1 && strcasecmp(argv[1], "maintenance") == 0) {
@@ -2359,6 +2394,12 @@ int main(int argc, char **argv)
 	
 	}
 
+	for (i=1;i<argc;i++) {
+		if (strcasecmp(argv[i], "/full") == 0 || strcasecmp(argv[i], "-full") == 0) {
+			full = 1;
+		}
+	}
+
 	od_parse_cmd_line(argc, argv);
 #endif
 	
@@ -2369,6 +2410,7 @@ int main(int argc, char **argv)
 		od_get_key(TRUE);
 		od_exit(2, FALSE);
 	}
+
 	od_control_get()->od_before_exit = door_quit;
 	fptr = fopen("inuse.flg", "w");
 	fputs("INUSE!", fptr);
