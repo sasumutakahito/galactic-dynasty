@@ -56,10 +56,15 @@ Under the [main] section:
 Under the [InterBBS] section
 
 *Enabled* Either False or True if InterBBS mode is to be enabled.
+
 *System Name* Your system name
+
 *League Number* The league number the game is a part of
+
 *Node Number* Your node number within the league
+
 *File Inbox* Where to look for incoming .GAL files
+
 *Default Outbox* Default outbox, used when LinkFileOutbox is not defined in BBS.CFG
 
 ### InterBBS
