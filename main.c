@@ -6,7 +6,7 @@
 #include <sqlite3.h>
 #include <ctype.h>
 #include <limits.h>
-
+#include <unistd.h>
 #include <stdint.h>
 #include <sys/stat.h>
 #include "interbbs2.h"
@@ -2236,6 +2236,10 @@ void game_loop(player_t *player)
 
 }
 
+void door_quit(void) {
+	unlink("inuse.flg");
+}
+
 #if _MSC_VER
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,LPSTR lpszCmdLine,int nCmdShow)
 {
@@ -2252,6 +2256,8 @@ int main(int argc, char **argv)
 	char c;
 	int i;
 	struct stat s;
+	int inuse = 0;
+	FILE *fptr;
 
 	srand(time(NULL));
 
@@ -2285,20 +2291,56 @@ int main(int argc, char **argv)
 		}
 	}
 
+	if (stat("inuse.flg", &s) == 0) {
+		inuse = 1;
+	}
+
 #if _MSC_VER
 	if (strcasecmp(lpszCmdLine, "maintenance") == 0) {
-		perform_maintenance();
-		return 0;
+		if (inuse == 1) {
+			fprintf(stderr, "Game currently inuse.\n");
+			return 2;
+		} else {
+			fptr = fopen("inuse.flg", "w");
+			fputs("INUSE!", fptr);
+			fclose(fptr);
+			perform_maintenance();
+			unlink("inuse.flg");
+			return 0;
+		}
+		
 	}
 	od_parse_cmd_line(lpszCmdLine);
 #else
 	if (argc > 1 && strcasecmp(argv[1], "maintenance") == 0) {
-		perform_maintenance();
-		return 0;
+		if (inuse == 1) {
+			fprintf(stderr, "Game currently inuse.\n");
+			return 2;
+		} else {
+			fptr = fopen("inuse.flg", "w");
+			fputs("INUSE!", fptr);
+			fclose(fptr);		
+			perform_maintenance();
+			unlink("inuse.flg");
+			return 0;
+		}
+	
 	}
 
 	od_parse_cmd_line(argc, argv);
 #endif
+	
+	od_init();
+
+	if (inuse == 1) {
+		od_printf("Sorry, the game is currently inuse. Please try again later.\r\n");
+		od_get_key(TRUE);
+		od_exit(2, FALSE);
+	}
+	od_control_get()->od_before_exit = door_quit;
+	fptr = fopen("inuse.flg", "w");
+	fputs("INUSE!", fptr);
+	fclose(fptr);	
 
 	od_send_file("logo.ans");
 	od_get_key(TRUE);
@@ -2387,3 +2429,4 @@ int main(int argc, char **argv)
 	free(player);
 	od_exit(0, FALSE);
 }
+
