@@ -45,11 +45,22 @@ You will need to write a shell script that first changes the working directory t
 
 ### Configuring
 
-The galactic.ini file is where you configure the game. So far only two options exist:
+The galactic.ini file is where you configure the game.
+
+Under the [main] section:
 
 *Turns Per Day* This is the number of turns each player can play in a day
 
 *Turns in Protection* This is the number of turns a player will be protected from attack.
+
+Under the [InterBBS] section
+
+*Enabled* Either False or True if InterBBS mode is to be enabled.
+*System Name* Your system name
+*League Number* The league number the game is a part of
+*Node Number* Your node number within the league
+*File Inbox* Where to look for incoming .GAL files
+*Default Outbox* Default outbox, used when LinkFileOutbox is not defined in BBS.CFG
 
 ### InterBBS
 
@@ -57,19 +68,10 @@ InterBBS is configured using BBS.CFG, if it exists the game will function in int
 
 The format of BBS.CFG can be found in EXAMPLE.CFG included in the distribution.
 
-Basically, you define settings for your node, then settings for each link.
-
-For your node:
-
- * *SystemName* Your BBS Name
- * *LeagueNo* Your League Number
- * *NodeNo* Your Node Number
- * *FileInbox* Your incoming file folder
-
 For each Link
-
+ * *LinkNodeNumber* The node number of the link (MUST BE FIRST)
  * *LinkName* The Name of a Linked BBS
- * *LinkFileOutbox* The outbox for files for this link.
+ * *LinkFileOutbox* The outbox for files for this link. (Optional)
 
 Files can either be sent directly to the link, or via other links. If a link receives a packet not destined to it, it will forward it to the outbox specified in it's config.
 
@@ -81,3 +83,6 @@ Again, this must be run with the working directory as the Galactic Dynasty direc
 
 Don't run maintenance more than once a minute as you will get file collisions. A good frequency to run maintenance would be once a day, but you can increase that if you would like a more responsive interbbs experience.
 
+### Score Files
+
+Score files are generated in ascii and ansi formats. The headers and footers can be customized to suit your BBS.
