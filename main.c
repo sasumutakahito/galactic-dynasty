@@ -67,7 +67,7 @@ typedef struct message {
 
 typedef struct ibbsmsg {
 	int32_t type;
-	uint32_t int from;
+	uint32_t from;
 	char player_name[17];
 	char victim_name[17];
 	int32_t score;
