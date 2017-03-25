@@ -16,6 +16,7 @@
 #define TURNS_IN_PROTECTION 0
 #if _MSC_VER
 #include <windows.h>
+#include <winsock2.h>
 #define snprintf _snprintf
 #define strcasecmp _stricmp
 #endif
@@ -86,6 +87,33 @@ typedef struct ibbsscore {
 	char bbs_name[40];
 	int score;
 } ibbsscores_t;
+
+void msg2ne(struct ibbsmsg_t *msg) {
+	msg->type = htonl(msg->type);
+	msg->from = htonl(msg->from);
+	msg->score = htonl(msg->score);
+	msg->troops = htonl(msg->troops);
+	msg->generals = htonl(msg->general);
+	msg->fighters = htonl(msg->fighters);
+	msg->plunder_credits = htonl(msg->plunder_credits);
+	msg->plunder_food = htonl(msg->plunder_food);
+	msg->plunder_people = htonl(msg->plunder_people);
+	msg->created = htonl(msg->created);
+}
+
+void msg2he(struct ibbsmsg_t *msg) {
+	msg->type = ntohl(msg->type);
+	msg->from = ntohl(msg->from);
+	msg->score = ntohl(msg->score);
+	msg->troops = ntohl(msg->troops);
+	msg->generals = ntohl(msg->general);
+	msg->fighters = ntohl(msg->fighters);
+	msg->plunder_credits = ntohl(msg->plunder_credits);
+	msg->plunder_food = ntohl(msg->plunder_food);
+	msg->plunder_people = ntohl(msg->plunder_people);
+	msg->created = ntohl(msg->created);
+}
+
 
 
 static int handler(void* user, const char* section, const char* name,
@@ -1427,8 +1455,9 @@ void perform_maintenance()
 	if (interBBSMode == 1) {
 		while (1) {
 		    result = IBGet(&InterBBSInfo, &msg, sizeof(ibbsmsg_t));
-
+			
 	 	    if (result == eSuccess) {
+				msg2he(&msg);
 			switch(msg.type) {
 			case 1:
 				// add score to database
@@ -1477,6 +1506,7 @@ void perform_maintenance()
 			case 2:
 				// perform invasion
 				if (do_interbbs_battle(msg.victim_name, msg.player_name, msg.from, msg.troops, msg.generals, msg.fighters, &outboundmsg) == 0) {
+					msg2ne(&outboundmsg);
 					IBSend(&InterBBSInfo, msg.from, &outboundmsg, sizeof(ibbsmsg_t));
 				}
 				break;
@@ -1587,7 +1617,7 @@ void perform_maintenance()
 					msg.created = time(NULL);
 					player->last_score = calculate_score(player);
 					save_player(player);
-
+					msg2ne(&msg);
 					IBSendAll(&InterBBSInfo, &msg, sizeof(ibbsmsg_t));
 				}
 
@@ -1732,6 +1762,7 @@ void game_loop(player_t *player)
 								strcpy(msg.player_name, player->gamename);
 								msg.from = InterBBSInfo.myNode->nodeNumber;
 								msg.created = time(NULL);
+								msg2ne(&msg);
 								if (IBSend(&InterBBSInfo, addr, &msg, sizeof(ibbsmsg_t)) != eSuccess) {
 									od_printf("\r\nMessage failed to send.\r\n");
 								} else {
@@ -2141,6 +2172,7 @@ void game_loop(player_t *player)
 									msg.fighters = 0;
 								}
 								// send message
+								msg2ne(&msg);
 								if (IBSend(&InterBBSInfo, addr, &msg, sizeof(ibbsmsg_t)) != eSuccess) {
 									player->troops += msg.troops;
 									player->generals += msg.generals;
