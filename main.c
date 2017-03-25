@@ -93,7 +93,7 @@ void msg2ne(ibbsmsg_t *msg) {
 	msg->from = htonl(msg->from);
 	msg->score = htonl(msg->score);
 	msg->troops = htonl(msg->troops);
-	msg->generals = htonl(msg->general);
+	msg->generals = htonl(msg->generals);
 	msg->fighters = htonl(msg->fighters);
 	msg->plunder_credits = htonl(msg->plunder_credits);
 	msg->plunder_food = htonl(msg->plunder_food);
@@ -106,7 +106,7 @@ void msg2he(ibbsmsg_t *msg) {
 	msg->from = ntohl(msg->from);
 	msg->score = ntohl(msg->score);
 	msg->troops = ntohl(msg->troops);
-	msg->generals = ntohl(msg->general);
+	msg->generals = ntohl(msg->generals);
 	msg->fighters = ntohl(msg->fighters);
 	msg->plunder_credits = ntohl(msg->plunder_credits);
 	msg->plunder_food = ntohl(msg->plunder_food);
