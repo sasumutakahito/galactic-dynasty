@@ -2297,7 +2297,9 @@ void door_quit(void) {
 	if (full == 1) {
 		perform_maintenance();
 	}
-	unlink("inuse.flg");
+	if(unlink("inuse.flg") != 0) {
+		perror("unlink ");
+	}
 }
 
 #if _MSC_VER
@@ -2367,13 +2369,15 @@ int main(int argc, char **argv)
 			fputs("INUSE!", fptr);
 			fclose(fptr);
 			perform_maintenance();
-			unlink("inuse.flg");
+			if(unlink("inuse.flg") != 0) {
+				perror("unlink ");
+			}
 			return 0;
 		}		
 	}
 
 	for (i=0;i<strlen(lpszCmdLine);i++) {
-       	if (strncmp(&lpszCmdLine[i], "-FULL", 5) == 0 || strncmp(&lpszCmdLine[i], "/FULL", 5) == 0) {
+       	if (strncasecmp(&lpszCmdLine[i], "-FULL", 5) == 0 || strncasecmp(&lpszCmdLine[i], "/FULL", 5) == 0) {
             full = 1;
         } 
 	}	
@@ -2388,7 +2392,9 @@ int main(int argc, char **argv)
 			fputs("INUSE!", fptr);
 			fclose(fptr);		
 			perform_maintenance();
-			unlink("inuse.flg");
+			if(unlink("inuse.flg") != 0) {
+				perror("unlink ");
+			}
 			return 0;
 		}
 	
