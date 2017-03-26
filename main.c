@@ -2417,7 +2417,7 @@ int main(int argc, char **argv)
 		od_exit(2, FALSE);
 	}
 
-	od_control_get()->od_before_exit = door_quit;
+	od_control.od_before_exit = door_quit;
 	fptr = fopen("inuse.flg", "w");
 	fputs("INUSE!", fptr);
 	fclose(fptr);	
