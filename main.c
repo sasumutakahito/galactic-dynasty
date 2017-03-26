@@ -1924,11 +1924,11 @@ void game_loop(player_t *player)
 					}
 					break;
 				case '5':
-					od_printf("How many command ship components do you want to buy? (MAX `bright yellow`%d`white`) ", (player->credits / 10000 < 10 - player->command_ship ? player->credits / 10000:10 - player->command_ship));
+					od_printf("How many command ship components do you want to buy? (MAX `bright yellow`%d`white`) ", (player->credits / 10000 < 100 - player->command_ship ? player->credits / 10000:100 - player->command_ship));
 					od_input_str(buffer, 8, '0', '9');
 					if (strlen(buffer) != 0) {
 						i = atoi(buffer);
-						if (i + player->command_ship > 10) {
+						if (i + player->command_ship > 100) {
 							od_printf("\r\n`bright red`You can't buy that many!`white`\r\n");
 						} else if (i * 10000 > player->credits) {
 							od_printf("\r\n`bright red`You can't afford that many!`white`\r\n");
