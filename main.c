@@ -1437,6 +1437,7 @@ void perform_maintenance()
 	ibbsmsg_t msg;
 	ibbsmsg_t outboundmsg;
 	int i;
+	int id;
 	int rc;
 	sqlite3_stmt *stmt;
 	sqlite3 *db;
@@ -1502,7 +1503,7 @@ void perform_maintenance()
 				rc = sqlite3_step(stmt);
 
 				if (rc == SQLITE_ROW) {
-					i = sqlite3_column_int(stmt, 0);
+					id = sqlite3_column_int(stmt, 0);
 					last_score = sqlite3_column_int(stmt, 1);
 					sqlite3_finalize(stmt);
 					if (last_score < msg.created) {
@@ -1510,7 +1511,7 @@ void perform_maintenance()
 						sqlite3_prepare_v2(db, sqlbuffer, strlen(sqlbuffer) + 1, &stmt, NULL);
 						sqlite3_bind_int(stmt, 1, msg.score);
 						sqlite3_bind_int(stmt, 2, msg.created);
-						sqlite3_bind_int(stmt, 3, i);
+						sqlite3_bind_int(stmt, 3, id);
 						sqlite3_step(stmt);
 						sqlite3_finalize(stmt);
 					}
