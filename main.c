@@ -1491,7 +1491,7 @@ void perform_maintenance()
 					// Error opening the database
 					fprintf(stderr, "Error opening interbbs database: %s\n", sqlite3_errmsg(db));
 					sqlite3_close(db);
-					exit(1);
+					return;
 				}
 				sqlite3_busy_timeout(db, 5000);
 				snprintf(sqlbuffer, 256, "SELECT id, last FROM scores WHERE gamename=? and address=?");
@@ -1568,7 +1568,7 @@ void perform_maintenance()
 					// Error opening the database
 					printf("Error opening interbbs database: %s\n", sqlite3_errmsg(db));
 					sqlite3_close(db);
-					exit(1);
+					return;
 				}
 				sqlite3_busy_timeout(db, 5000);
 				snprintf(sqlbuffer, 256, "INSERT INTO messages (recipient, 'from', address, date, seen, body) VALUES(?, ?, ?, ?, ?, ?)");
