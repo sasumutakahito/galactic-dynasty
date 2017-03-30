@@ -81,6 +81,8 @@ typedef struct ibbsmsg {
 	int32_t plunder_people;
 	char message[256];
 	uint32_t created;
+	uint32_t turns_per_day;
+	uint32_t turns_in_protection;
 } __attribute__((packed)) ibbsmsg_t;
 
 typedef struct ibbsscore {
@@ -100,6 +102,8 @@ void msg2ne(ibbsmsg_t *msg) {
 	msg->plunder_food = htonl(msg->plunder_food);
 	msg->plunder_people = htonl(msg->plunder_people);
 	msg->created = htonl(msg->created);
+	msg->turns_per_day = htonl(msg->turns_per_day);
+	msg->turns_in_protection = htonl(msg->turns_in_protection);
 }
 
 void msg2he(ibbsmsg_t *msg) {
@@ -113,6 +117,8 @@ void msg2he(ibbsmsg_t *msg) {
 	msg->plunder_food = ntohl(msg->plunder_food);
 	msg->plunder_people = ntohl(msg->plunder_people);
 	msg->created = ntohl(msg->created);
+	msg->turns_per_day = ntohl(msg->turns_per_day);
+	msg->turns_in_protection = ntohl(msg->turns_in_protection);
 }
 
 static int handler(void* user, const char* section, const char* name,
@@ -1451,9 +1457,12 @@ void perform_maintenance()
 	char message[256];
 	time_t lastrun;
 	time_t timenow;
-	FILE *fptr;
-
+	FILE *fptr, *fptr2;
+	int newnodenum;
+	char message2[256];
+	int stage = 0;
 	timenow = time(NULL);
+	int reset = 0;
 
 	fptr = fopen("lastrun.dat", "rb");
 
@@ -1484,6 +1493,10 @@ void perform_maintenance()
 			
 	 	    if (result == eSuccess) {
 				msg2he(&msg);
+				if (msg.turns_in_protection != turns_in_protection || msg.turns_per_day != turns_per_day) {
+					fprintf(stderr, "Settings mismatch. Ignoring packet\n");
+					continue;
+				}
 			switch(msg.type) {
 			case 1:
 				// add score to database
@@ -1532,6 +1545,8 @@ void perform_maintenance()
 			case 2:
 				// perform invasion
 				if (do_interbbs_battle(msg.victim_name, msg.player_name, msg.from, msg.troops, msg.generals, msg.fighters, &outboundmsg) == 0) {
+					outboundmsg.turns_in_protection = turns_in_protection;
+					outboundmsg.turns_per_day = turns_per_day;
 					msg2ne(&outboundmsg);
 					IBSend(&InterBBSInfo, msg.from, &outboundmsg, sizeof(ibbsmsg_t));
 				}
@@ -1586,6 +1601,80 @@ void perform_maintenance()
 
 				sqlite3_close(db);
 				break;
+			case 5:
+				// new node
+				if (msg.from != 1) {
+					fprintf(stderr, "Received ADD/REMOVE from system not Node 1\n");
+					break;
+				}
+				if (strcmp(msg.victim_name, "ADD") == 0) {
+					newnodenum = atoi(msg.player_name);
+					fptr = fopen("BBS.CFG", "a");
+					if (!fptr) {
+						fprintf(stderr, "Unable to open BBS.CFG\n");
+						break;
+					}
+					fprintf(fptr, "\r\nLinkNodeNumber %d\r\n", newnodenum);
+					fprintf(fptr, "LinkName %s\r\n", msg.message);
+					fclose(fptr);
+				} else if (strcmp(msg.victim_name, "REMOVE")) {
+					newnodenum = atoi(msg.player_name);
+					fptr = fopen("BBS.CFG", "r");
+					if (!fptr) {
+						fprintf(stderr, "Unable to open BBS.CFG\n");
+						break;
+					}
+
+					fptr2 = fopen("BBS.CFG.BAK", "w");
+					if (!fptr2) {
+						fprintf(stderr, "Unable to open BBS.CFG.BAK\n");
+						break;
+					}
+					fgets(message, 256, fptr);
+					while (!feof(fptr)) {
+						fputs(message, fptr2);
+						fgets(message, 256, fptr);
+					}
+					fclose(fptr2);
+					fclose(fptr);
+					fptr = fopen("BBS.CFG.BAK", "r");
+					if (!fptr) {
+						fprintf(stderr, "Unable to open BBS.CFG.BAK\n");
+						break;
+					}
+
+					fptr2 = fopen("BBS.CFG", "w");
+					if (!fptr2) {
+						fprintf(stderr, "Unable to open BBS.CFG\n");
+						break;
+					}
+
+					sprintf(message2, "LinkNodeNumber %d", newnodenum);
+
+					fgets(message, 256, fptr);
+					while (!feof(fptr)) {
+						if (strncasecmp(message, message2, strlen(message2)) == 0) {
+							stage = 1;
+						} else if (strncasecmp(message, "LinkNodeNumber", 14) == 0 && stage ==1) {
+							stage = 0;
+						}
+						if (stage == 0) {
+							fputs(message, fptr2);
+						}
+						fgets(message, 256, fptr);
+					}
+					fclose(fptr2);
+					fclose(fptr);
+					unlink("BBS.CFG.BAK");
+				}
+				break;
+			case 6:
+				if (msg.from == 1) {
+					reset = 1;
+				} else {
+					fprintf(stderr, "Got reset message from someone not node 1, ignoring\n");
+				}
+				break;
 			default:
 				fprintf(stderr, "Unknown message type: %d\n", msg.type);
 				break;
@@ -1597,7 +1686,15 @@ void perform_maintenance()
 			break;
 		    }
 		}
-
+		if (reset == 1) {
+			fprintf(stderr, "Got reset message! resetting the game...\n");
+#ifdef _MSC_VER
+			system("reset.bat");
+#else
+			system("./reset.sh");
+#endif				
+			exit(0);
+		}
 		fprintf(stderr, "Parsed %d inbound messages\nForwarded %d messages\n", i, k);
 
 
@@ -1643,6 +1740,8 @@ void perform_maintenance()
 					msg.created = time(NULL);
 					player->last_score = calculate_score(player);
 					save_player(player);
+					msg.turns_in_protection = turns_in_protection;
+					msg.turns_per_day = turns_per_day;					
 					msg2ne(&msg);
 					IBSendAll(&InterBBSInfo, &msg, sizeof(ibbsmsg_t));
 				}
@@ -1717,6 +1816,7 @@ void game_loop(player_t *player)
 	int troop_wages;
 	int citizen_hunger;
 	int total_industrial;
+	int total_ore;
 	int done;
 	float starvation;
 	float loyalty;
@@ -1788,6 +1888,8 @@ void game_loop(player_t *player)
 								strcpy(msg.player_name, player->gamename);
 								msg.from = InterBBSInfo.myNode->nodeNumber;
 								msg.created = time(NULL);
+								msg.turns_in_protection = turns_in_protection;
+								msg.turns_per_day = turns_per_day;
 								msg2ne(&msg);
 								if (IBSend(&InterBBSInfo, addr, &msg, sizeof(ibbsmsg_t)) != eSuccess) {
 									od_printf("\r\nMessage failed to send.\r\n");
@@ -2198,6 +2300,8 @@ void game_loop(player_t *player)
 									msg.fighters = 0;
 								}
 								// send message
+								msg.turns_in_protection = turns_in_protection;
+								msg.turns_per_day = turns_per_day;
 								msg2ne(&msg);
 								if (IBSend(&InterBBSInfo, addr, &msg, sizeof(ibbsmsg_t)) != eSuccess) {
 									player->troops += msg.troops;
@@ -2228,17 +2332,23 @@ void game_loop(player_t *player)
 		}
 
 		if (player->planets_ore > 0) {
-			od_printf("Your ore planets mined %d worth of minerals\r\n", player->planets_ore * 1000);
+			if (player->planets_ore > (int)(player->population / 5.f)) {
+				total_ore = (int)(player->population / 5.f * 1000.f);
+			} else {
+				total_ore = player->planets_ore * 1000;
+			}
 
-			player->credits += player->planets_ore * 1000;
+			od_printf("Your ore planets mined %d worth of minerals\r\n", total_ore);
+
+			player->credits += total_ore;
 		}
 
 		if (player->planets_industrial > 0) {
 
-			if (player->planets_industrial * 1500 > player->population * 10) {
-				total_industrial = player->population * 10;
+			if (player->planets_industrial > (int)(player->population / 5.f)) {
+				total_industrial = (int)(player->population / 5.f * 1000.f);
 			} else {
-				total_industrial = player->planets_industrial * 1500;
+				total_industrial = player->planets_industrial * 1000;
 			}
 
 			od_printf("Your industrial planets produced %d worth of goods\r\n", total_industrial);
@@ -2321,7 +2431,12 @@ int main(int argc, char **argv)
 	struct stat s;
 	int inuse = 0;
 	FILE *fptr;
-	
+	int j;
+	int newnodenum;
+	int start;
+	int end;
+	char newnodename[256];
+	ibbsmsg_t msg;
 	full = 0;
 
 	srand(time(NULL));
@@ -2376,11 +2491,74 @@ int main(int argc, char **argv)
 			return 0;
 		}		
 	}
+	if (strcasecmp(lpszCmdLine, "reset") == 0) {
+		memset(&msg, 0, sizeof(ibbsmsg_t));
+		msg.type = 6;
+		msg.from = InterBBSInfo.myNode->nodeNumber;
+		msg.created = time(NULL);
+		msg.turns_per_day = turns_per_day;
+		msg.turns_in_protection = turns_in_protection;
+		msg2ne(&msg);
+		IBSendAll(&InterBBSInfo, &msg, sizeof(ibbsmsg_t));	
+		return 0;		
+	}
+
+	start = 0;
+	if (strncasecmp(lpszCmdLine, "-ADD", 4) == 0 || strncasecmp(lpszCmdLine, "/ADD", 4) == 0) {
+		for (i=5;i<strlen(lpszCmdLine);i++) {
+			if (lpszCmdLine[i] == '\"' && start == 0) {
+				start = i+1;
+			} else if (lpszCmdLine[i] == '\"') {
+				end = i;
+				break;
+			}
+		}
+		
+		if (end - start < 255) {
+			strncpy(newnodename, &lpszCmdLine[start], end - start);
+			newnodenum = atoi(&lpszCmdLine[5]);
+
+			memset(&msg, 0, sizeof(ibbsmsg_t));
+
+			msg.type = 5;
+			msg.from = InterBBSInfo.myNode->nodeNumber;
+			sprintf(msg.player_name, "%d", newnodenum);
+			strcpy(msg.victim_name, "ADD");
+			sprintf(msg.message, "%s", newnodename);
+			msg.created = time(NULL);
+			msg.turns_per_day = turns_per_day;
+			msg.turns_in_protection = turns_in_protection;
+
+			msg2ne(&msg);
+			IBSendAll(&InterBBSInfo, &msg, sizeof(ibbsmsg_t));
+		}
+		return 0;
+	}
+
+	if (strncasecmp(lpszCmdLine, "-DEL", 4) == 0 || strncasecmp(lpszCmdLine, "/DEL", 4) == 0) {
+		if (end - start < 255) {
+			newnodenum = atoi(&lpszCmdLine[5]);
+
+			memset(&msg, 0, sizeof(ibbsmsg_t));
+
+			msg.type = 5;
+			msg.from = InterBBSInfo.myNode->nodeNumber;
+			sprintf(msg.player_name, "%d", newnodenum);
+			strcpy(msg.victim_name, "REMOVE");
+			msg.created = time(NULL);
+			msg.turns_per_day = turns_per_day;
+			msg.turns_in_protection = turns_in_protection;
+
+			msg2ne(&msg);
+			IBSendAll(&InterBBSInfo, &msg, sizeof(ibbsmsg_t));
+		}
+		return 0;
+	}	
 
 	for (i=0;i<strlen(lpszCmdLine);i++) {
        	if (strncasecmp(&lpszCmdLine[i], "-FULL", 5) == 0 || strncasecmp(&lpszCmdLine[i], "/FULL", 5) == 0) {
             full = 1;
-        } 
+        }
 	}	
 	od_parse_cmd_line(lpszCmdLine);
 #else
@@ -2399,6 +2577,53 @@ int main(int argc, char **argv)
 			return 0;
 		}
 	
+	}
+
+	if (argc > 1 && strcasecmp(argv[1], "reset") == 0) {
+		memset(&msg, 0, sizeof(ibbsmsg_t));
+		msg.type = 6;
+		msg.from = InterBBSInfo.myNode->nodeNumber;
+		msg.created = time(NULL);
+		msg.turns_per_day = turns_per_day;
+		msg.turns_in_protection = turns_in_protection;
+		msg2ne(&msg);
+		IBSendAll(&InterBBSInfo, &msg, sizeof(ibbsmsg_t));	
+		return 0;	
+	}
+
+	if (argc > 1 && (strcasecmp(argv[1], "-ADD") == 0 || strcasecmp(argv[1], "/ADD") == 0)) {
+			memset(&msg, 0, sizeof(ibbsmsg_t));
+
+			msg.type = 5;
+			msg.from = InterBBSInfo.myNode->nodeNumber;
+			sprintf(msg.player_name, "%s", argv[2]);
+			strcpy(msg.victim_name, "ADD");
+			sprintf(msg.message, "%s", argv[3]);
+			msg.created = time(NULL);
+			msg.turns_per_day = turns_per_day;
+			msg.turns_in_protection = turns_in_protection;
+
+			msg2ne(&msg);
+
+			printf("sending to all\n");
+			printf("%d\n", IBSendAll(&InterBBSInfo, &msg, sizeof(ibbsmsg_t)));
+			return 0;
+	}
+
+	if (argc > 1 && (strcasecmp(argv[1], "-DEL") == 0 || strcasecmp(argv[1], "/DEL") == 0)) {
+			memset(&msg, 0, sizeof(ibbsmsg_t));
+
+			msg.type = 5;
+			msg.from = InterBBSInfo.myNode->nodeNumber;
+			sprintf(msg.player_name, "%s", argv[2]);
+			strcpy(msg.victim_name, "REMOVE");
+			msg.created = time(NULL);
+			msg.turns_per_day = turns_per_day;
+			msg.turns_in_protection = turns_in_protection;
+
+			msg2ne(&msg);
+			IBSendAll(&InterBBSInfo, &msg, sizeof(ibbsmsg_t));
+			return 0;
 	}
 
 	for (i=1;i<argc;i++) {
