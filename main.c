@@ -1035,7 +1035,7 @@ player_t *new_player(char *bbsname) {
 	player->planets_ore = 0;
 	player->planets_industrial = 0;
 	player->planets_military = 0;
-	player->planets_urban = 4;
+	player->planets_urban = 6;
 	player->command_ship = 0;
 
 	player->turns_left = turns_per_day;
@@ -1799,7 +1799,7 @@ void state_of_the_galaxy(player_t *player) {
 	od_printf(" - Def. Stations: %d\r\n", player->defence_stations);
 	od_printf(" - Command Ship : %d%% complete\r\n", player->command_ship);
 	od_printf(" - Planets      : %d\r\n", player->planets_food + player->planets_ore + player->planets_military + player->planets_industrial);
-	od_printf("   (Ore %d)(Food %d) (Soldier %d) (Industrial %d) (Urban %d)\r\n", player->planets_ore, player->planets_food, player->planets_military, player->planets_industrial, player->planets_urban);
+	od_printf("   (Ore %d) (Food %d) (Soldier %d) (Industrial %d) (Urban %d)\r\n", player->planets_ore, player->planets_food, player->planets_military, player->planets_industrial, player->planets_urban);
 	if (player->total_turns < turns_in_protection) {
 		od_printf("`bright yellow`You have %d turns left under protection.\r\n", turns_in_protection - player->total_turns);
 	}
@@ -1988,7 +1988,7 @@ void game_loop(player_t *player)
 			od_printf(" (3) Fighters ................1000    %6d     %6d\r\n", player->fighters, player->credits / 1000);
 			od_printf(" (4) Defence Stations ........1000    %6d     %6d\r\n", player->defence_stations, player->credits / 1000);
 			od_printf(" (5) Command Ship Components 10000    %6d%%    %5d%%\r\n", player->command_ship, player->credits / 10000);
-			od_printf(" (6) Colonize Planets ........2000    %6d     %6d\r\n", player->planets_ore + player->planets_food + player->planets_industrial + player->planets_military, player->credits / 2000);
+			od_printf(" (6) Colonize Planets ........2000    %6d     %6d\r\n", player->planets_ore + player->planets_food + player->planets_industrial + player->planets_military + player->planets_urban, player->credits / 2000);
 			od_printf(" (7) Food .....................100    %6d     %6d\r\n", player->food, player->credits / 100);
 			od_printf(" (8) Spies ...................5000    %6d     %6d\r\n", player->spies, player->credits / 5000);
 			od_printf("\r\n");
@@ -2392,11 +2392,11 @@ void game_loop(player_t *player)
 			player->population -= player->population - (player->population * starvation);
 		} else {
 			if (player->population > player->planets_urban * 50) {
-				od_printf("%d no population increase due to not enough urban planets\r\n");
+				od_printf("No population increase due to not enough urban planets\r\n");
 			} else {
 				od_printf("%d new citizens join the empire\r\n", (int)((float)player->population * 0.05));
+				player->population += player->population * 0.05;
 			}
-			player->population += player->population * 0.05;
 		}
 
 		if (loyalty < 1) {
