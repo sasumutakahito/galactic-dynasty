@@ -2077,7 +2077,7 @@ void game_loop(player_t *player)
 							od_printf("  2. Food\r\n");
 							od_printf("  3. Soldier\r\n");
 							od_printf("  4. Industrial\r\n");
-							od_printf("  5. Urban\r\n")
+							od_printf("  5. Urban\r\n");
 							c = od_get_answer("12345");
 							switch (c) {
 							case '1':
