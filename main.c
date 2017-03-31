@@ -1799,7 +1799,7 @@ void state_of_the_galaxy(player_t *player) {
 	od_printf(" - Def. Stations: %d\r\n", player->defence_stations);
 	od_printf(" - Command Ship : %d%% complete\r\n", player->command_ship);
 	od_printf(" - Planets      : %d\r\n", player->planets_food + player->planets_ore + player->planets_military + player->planets_industrial);
-	od_printf("   (Ore %d)(Food %d) (Soldier %d) (Industrial %d)\r\n", player->planets_ore, player->planets_food, player->planets_military, player->planets_industrial);
+	od_printf("   (Ore %d)(Food %d) (Soldier %d) (Industrial %d) (Urban %d)\r\n", player->planets_ore, player->planets_food, player->planets_military, player->planets_industrial, player->planets_urban);
 	if (player->total_turns < turns_in_protection) {
 		od_printf("`bright yellow`You have %d turns left under protection.\r\n", turns_in_protection - player->total_turns);
 	}
