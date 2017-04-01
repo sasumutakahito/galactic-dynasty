@@ -1864,6 +1864,8 @@ void game_loop(player_t *player)
 	int troops_to_send;
 	int generals_to_send;
 	int fighters_to_send;
+	int event_rand;
+	int event_mod;
 
 	unseen_msgs(player);
 
@@ -2392,6 +2394,9 @@ void game_loop(player_t *player)
 
 		player->credits += player->population * 23;
 
+
+
+
 		// Population Changes
 		if (starvation < 1) {
 			od_printf("%d citizens died from starvation\r\n", (int)(player->population - ((float)player->population * starvation)));
@@ -2410,6 +2415,47 @@ void game_loop(player_t *player)
 			player->troops -= player->troops - (player->troops * loyalty);
 		}
 
+		// event
+		event_rand = rand() % 100 + 1;
+
+		if (event_rand < 25) {
+			switch(rand() % 6 + 1) {
+				case 1:
+					event_mod = (int)(((rand() % 5 + 1) / 100.f) * (float)player->population);
+					od_printf("`bright yellow`A new plague sweeps through your empire killing %d citizens.`white`\r\n", event_mod);
+					player->population -= event_mod;
+					break;
+				case 2:
+					event_mod = (int)(((rand() % 5 + 1) / 100.f) * (float)player->credits);
+					od_printf("`bright yellow`Rogue hackers attack empire banks! You lost %d credits.`white`\r\n", event_mod);
+					player->credits -= event_mod;
+					break;				
+				case 3:
+					event_mod = (int)(((rand() % 5 + 1) / 100.f) * (float)player->troops);
+					od_printf("`bright yellow`Civil war breaks out! You lost %d troops.`white`\r\n", event_mod);
+					player->troops -= event_mod;
+					break;					
+				case 4:
+					event_mod = (int)(((rand() % 5 + 1) / 100.f) * (float)player->population);
+					od_printf("`bright green`Citizen confidence at an all time high, population incresed by %d citizens.`white`\r\n", event_mod);
+					player->population += event_mod;
+					break;				
+				case 5:
+					event_mod = (int)(((rand() % 5 + 1) / 100.f) * (float)player->credits);
+					od_printf("`bright green`Markets booming! Stocks return an extra %d credits.`white`\r\n", event_mod);
+					player->credits += event_mod;
+					break;								
+				case 6:
+					event_mod = (int)(((rand() % 5 + 1) / 100.f) * (float)player->troops);
+					od_printf("`bright green`Recruitment propaganda pays off, %d troops enlist.`white`\r\n", event_mod);
+					player->troops += event_mod;
+					break;
+				default:
+					od_printf("Intergalactic space pirates perform salsa dance in your honour. This event should not have occured.\r\n");
+					break;			
+					
+			}
+		}
 
 		// loop
 		player->turns_left--;
