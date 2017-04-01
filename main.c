@@ -1823,8 +1823,14 @@ player_t *select_victim(player_t *player, char *prompt, int type)
 			if (victim == NULL) {
 				od_printf("\r\nNo such empire!\r\n");
 			} else if (victim->id == player->id) {
-				od_printf("\r\nYou can't attack yourself!\r\n");
-			} else if (victim->total_turns < turns_in_protection && type == 2) {
+				if (type == 1) {
+					od_printf("\r\nYou can't send a message to yourself\r\n'");
+				} else if (type == 2) {
+					od_printf("\r\nYou can't attack yourself!\r\n");
+				} else if (type == 3) {
+					od_printf("\r\nYou can't spy on yourself!\r\n");
+				}
+			} else if (victim->total_turns < turns_in_protection && type > 1) {
 				od_printf("\r\nSorry, that empire is under protection.\r\n");
 			} else {
 				return victim;
@@ -2148,7 +2154,7 @@ void game_loop(player_t *player)
 			c = od_get_answer("1dD\r");
 			switch(tolower(c)) {
 			case '1':
-				victim = select_victim(player, "Who do you want to spy on", 2);
+				victim = select_victim(player, "Who do you want to spy on", 3);
 				if (victim != NULL) {
 					i = rand() % 100 + 1;
 					if (i < 50) {
