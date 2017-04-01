@@ -2148,7 +2148,7 @@ void game_loop(player_t *player)
 			c = od_get_answer("1dD\r");
 			switch(tolower(c)) {
 			case '1':
-				victim = select_victim(player, "Who do you want to attack", 2);
+				victim = select_victim(player, "Who do you want to spy on", 2);
 				if (victim != NULL) {
 					i = rand() % 100 + 1;
 					if (i < 50) {
