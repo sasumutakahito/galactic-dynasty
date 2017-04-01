@@ -2647,7 +2647,7 @@ int main(int argc, char **argv)
 #else
 	if (argc > 1 && strcasecmp(argv[1], "maintenance") == 0) {
 		if (inuse == 1) {
-			fprintf(stderr, "Game currently inuse.\n");
+			fprintf(stderr, "Game currently in use.\n");
 			return 2;
 		} else {
 			fptr = fopen("inuse.flg", "w");
@@ -2721,7 +2721,7 @@ int main(int argc, char **argv)
 	od_init();
 
 	if (inuse == 1) {
-		od_printf("Sorry, the game is currently inuse. Please try again later.\r\n");
+		od_printf("Sorry, the game is currently in use. Please try again later.\r\n");
 		od_get_key(TRUE);
 		od_exit(2, FALSE);
 	}
