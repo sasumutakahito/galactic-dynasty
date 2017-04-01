@@ -36,11 +36,6 @@ tIBResult ProcessFile(tIBInfo *pInfo, char *filename, void *pBuffer, int nBuffer
 
     fread(version, 5, 1, fptr);
 
-    if (strncmp(version, VERSION, 5) != 0) {
-        fprintf(stderr, "Version Mismatch, is your game up to date? (%s vs %s)\n", version, VERSION);
-        return eBadParameter;
-    }
-
     fread(&league, sizeof(uint32_t),1, fptr);
     league = ntohl(league);
 
@@ -48,7 +43,11 @@ tIBResult ProcessFile(tIBInfo *pInfo, char *filename, void *pBuffer, int nBuffer
         return eBadParameter;
     }
 
- 
+    if (strncmp(version, VERSION, 5) != 0) {
+        fprintf(stderr, "Version Mismatch, is your game up to date? (Packet: %s vs Local: %s)\n", version, VERSION);
+        return eBadParameter;
+    }
+
     fread(&destination, 1, sizeof(uint32_t), fptr);
     destination = ntohl(destination);
 
