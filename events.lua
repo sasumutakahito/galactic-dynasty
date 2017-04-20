@@ -9,7 +9,9 @@ local event_rand = math.random(100);
 local total_events = 6;
 local event = math.random(total_events)
 
+-- If chance is 25% or less
 if event_rand < 25 then
+    -- do the event selected
     if event == 1 then
         local population = gd_get_population();
         local event_mod = math.random(5) / 100 * population;
