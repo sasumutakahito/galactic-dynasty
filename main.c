@@ -10,8 +10,8 @@
 #include <stdint.h>
 #include <sys/stat.h>
 
-#include <lua5.3/lua.h>
-#include <lua5.3/lauxlib.h>
+#include <lua.h>
+#include <lauxlib.h>
 
 #include "interbbs2.h"
 #include "inih/ini.h"
@@ -60,6 +60,8 @@ typedef struct player {
 	uint32_t last_score;
 	uint32_t total_turns;
 } player_t;
+
+player_t *gPlayer;
 
 typedef struct message {
 	int id;
@@ -158,6 +160,117 @@ static int handler(void* user, const char* section, const char* name,
 		}
 	}
 	return 1;
+}
+
+int lua_getTroops(lua_State *L) {
+	lua_pushnumber(L, gPlayer->troops);
+	return 1;
+}
+
+int lua_getGenerals(lua_State *L) {
+	lua_pushnumber(L, gPlayer->generals);
+	return 1;
+}
+
+int lua_getFighters(lua_State *L) {
+	lua_pushnumber(L, gPlayer->fighters);
+	return 1;
+}
+
+int lua_getDefenceStations(lua_State *L) {
+	lua_pushnumber(L, gPlayer->defence_stations);
+	return 1;
+}
+
+int lua_getSpies(lua_State *L) {
+	lua_pushnumber(L, gPlayer->spies);
+	return 1;
+}
+
+int lua_getPopulation(lua_State *L) {
+	lua_pushnumber(L, gPlayer->population);
+	return 1;
+}
+
+int lua_getFood(lua_State *L) {
+	lua_pushnumber(L, gPlayer->food);
+	return 1;
+}
+
+int lua_getCredits(lua_State *L) {
+	lua_pushnumber(L, gPlayer->credits);
+	return 1;
+}
+
+int lua_setTroops(lua_State *L) {
+	gPlayer->troops = lua_tonumber(L, -1);
+	return 0;
+}
+
+int lua_setGenerals(lua_State *L) {
+	gPlayer->generals = lua_tonumber(L, -1);
+	return 0;
+}
+
+int lua_setFighters(lua_State *L) {
+	gPlayer->fighters = lua_tonumber(L, -1);
+	return 0;
+}
+
+int lua_setDefenceStations(lua_State *L) {
+	gPlayer->defence_stations = lua_tonumber(L, -1);
+	return 0;
+}
+
+int lua_setSpies(lua_State *L) {
+	gPlayer->spies = lua_tonumber(L, -1);
+	return 0;
+}
+
+int lua_setPopulation(lua_State *L) {
+	gPlayer->population = lua_tonumber(L, -1);
+	return 0;
+}
+
+int lua_setFood(lua_State *L) {
+	gPlayer->food = lua_tonumber(L, -1);
+	return 0;
+}
+
+int lua_setCredits(lua_State *L) {
+	gPlayer->credits = lua_tonumber(L, -1);
+	return 0;
+}
+
+int lua_printYellow(lua_State *L) {
+	od_printf("`bright yellow`%s`white`\r\n", (char *)lua_tostring(L, -1));
+	return 0;
+}
+
+int lua_printGreen(lua_State *L) {
+	od_printf("`bright green`%s`white`\r\n", (char *)lua_tostring(L, -1));
+	return 0;
+}
+
+void lua_push_cfunctions(lua_State *L);
+
+void do_lua_script(char *script) {
+        lua_State *L;
+        char buffer[PATH_MAX];
+
+        if (script == NULL) {
+                return;
+        }
+
+        snprintf(buffer, PATH_MAX, "%s.lua", script);
+
+        L = luaL_newstate();
+        luaL_openlibs(L);
+        lua_push_cfunctions(L);
+        if (luaL_dofile(L, buffer)) {
+			od_printf("`bright red`%s`white`\r\n", lua_tostring(L, -1));
+		}
+        lua_close(L);
 }
 
 int select_bbs(int type) {
@@ -2419,47 +2532,7 @@ void game_loop(player_t *player)
 			player->troops -= player->troops - (player->troops * loyalty);
 		}
 
-		// event
-		event_rand = rand() % 100 + 1;
-
-		if (event_rand < 25) {
-			switch(rand() % 6 + 1) {
-				case 1:
-					event_mod = (int)(((rand() % 5 + 1) / 100.f) * (float)player->population);
-					od_printf("`bright yellow`A new plague sweeps through your empire killing %d citizens.`white`\r\n", event_mod);
-					player->population -= event_mod;
-					break;
-				case 2:
-					event_mod = (int)(((rand() % 5 + 1) / 100.f) * (float)player->credits);
-					od_printf("`bright yellow`Rogue hackers attack empire banks! You lost %d credits.`white`\r\n", event_mod);
-					player->credits -= event_mod;
-					break;				
-				case 3:
-					event_mod = (int)(((rand() % 5 + 1) / 100.f) * (float)player->troops);
-					od_printf("`bright yellow`Civil war breaks out! You lost %d troops.`white`\r\n", event_mod);
-					player->troops -= event_mod;
-					break;					
-				case 4:
-					event_mod = (int)(((rand() % 5 + 1) / 100.f) * (float)player->population);
-					od_printf("`bright green`Citizen confidence at an all time high, population incresed by %d citizens.`white`\r\n", event_mod);
-					player->population += event_mod;
-					break;				
-				case 5:
-					event_mod = (int)(((rand() % 5 + 1) / 100.f) * (float)player->credits);
-					od_printf("`bright green`Markets booming! Stocks return an extra %d credits.`white`\r\n", event_mod);
-					player->credits += event_mod;
-					break;								
-				case 6:
-					event_mod = (int)(((rand() % 5 + 1) / 100.f) * (float)player->troops);
-					od_printf("`bright green`Recruitment propaganda pays off, %d troops enlist.`white`\r\n", event_mod);
-					player->troops += event_mod;
-					break;
-				default:
-					od_printf("Intergalactic space pirates perform salsa dance in your honour. This event should not have occured.\r\n");
-					break;			
-					
-			}
-		}
+		do_lua_script("events");
 
 		// loop
 		player->turns_left--;
@@ -2500,6 +2573,45 @@ void door_quit(void) {
 	}
 }
 
+void lua_push_cfunctions(lua_State *L) {
+    lua_pushcfunction(L, lua_getTroops);
+    lua_setglobal(L, "gd_get_troops");
+    lua_pushcfunction(L, lua_getGenerals);
+    lua_setglobal(L, "gd_get_generals");
+    lua_pushcfunction(L, lua_getFighters);
+    lua_setglobal(L, "gd_get_fighters");
+    lua_pushcfunction(L, lua_getDefenceStations);
+    lua_setglobal(L, "gd_get_defence_stations");
+    lua_pushcfunction(L, lua_getSpies);
+    lua_setglobal(L, "gd_get_spies");
+    lua_pushcfunction(L, lua_getPopulation);
+    lua_setglobal(L, "gd_get_population");
+    lua_pushcfunction(L, lua_getFood);
+    lua_setglobal(L, "gd_get_food");
+    lua_pushcfunction(L, lua_getCredits);
+    lua_setglobal(L, "gd_get_credits");
+    lua_pushcfunction(L, lua_setTroops);
+    lua_setglobal(L, "gd_set_troops");
+    lua_pushcfunction(L, lua_setGenerals);
+    lua_setglobal(L, "gd_set_generals");
+    lua_pushcfunction(L, lua_setFighters);
+    lua_setglobal(L, "gd_set_fighters");
+    lua_pushcfunction(L, lua_setDefenceStations);
+    lua_setglobal(L, "gd_set_defence_stations");
+    lua_pushcfunction(L, lua_setSpies);
+    lua_setglobal(L, "gd_set_spies");
+    lua_pushcfunction(L, lua_setPopulation);
+    lua_setglobal(L, "gd_set_population");
+    lua_pushcfunction(L, lua_setFood);
+    lua_setglobal(L, "gd_set_food");
+    lua_pushcfunction(L, lua_setCredits);
+    lua_setglobal(L, "gd_set_credits");
+    lua_pushcfunction(L, lua_printYellow);
+    lua_setglobal(L, "gd_print_yellow");
+	lua_pushcfunction(L, lua_printGreen);
+    lua_setglobal(L, "gd_print_green");	
+}
+
 #if _MSC_VER
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,LPSTR lpszCmdLine,int nCmdShow)
 {
@@ -2507,7 +2619,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,LPSTR lpszCmdLin
 int main(int argc, char **argv)
 {
 #endif
-	player_t *player;
 	char bbsname[256];
 	time_t timenow;
 	struct tm today_tm;
@@ -2740,28 +2851,28 @@ int main(int argc, char **argv)
 
 	snprintf(bbsname, 255, "%s!%s", od_control_get()->user_name, od_control_get()->user_handle);
 
-	player = load_player(bbsname);
-	if (player == NULL) {
-		player = new_player(bbsname);
-		if (player == NULL) {
+	gPlayer = load_player(bbsname);
+	if (gPlayer == NULL) {
+		gPlayer = new_player(bbsname);
+		if (gPlayer == NULL) {
 			od_exit(0, FALSE);
 			exit(0);
 		} else {
-			save_player(player);
-			player = load_player(bbsname);
+			save_player(gPlayer);
+			gPlayer = load_player(bbsname);
 		}
 	}
 
-	ptr = localtime(&player->last_played);
+	ptr = localtime(&gPlayer->last_played);
 	memcpy(&last_tm, ptr, sizeof(struct tm));
 	timenow = time(NULL);
 	ptr = localtime(&timenow);
 	memcpy(&today_tm, ptr, sizeof(struct tm));
 
 	if (today_tm.tm_mday != last_tm.tm_mday) {
-		player->turns_left = turns_per_day;
+		gPlayer->turns_left = turns_per_day;
 	}
-	player->last_played = timenow;
+	gPlayer->last_played = timenow;
 
 	do {
 		od_printf("\r\n`white`Game Menu\r\n");
@@ -2785,16 +2896,16 @@ int main(int argc, char **argv)
 		od_printf("\r\n");
 		switch (c) {
 		case '1':
-			game_loop(player);
+			game_loop(gPlayer);
 			break;
 		case '2':
-			unseen_msgs(player);
+			unseen_msgs(gPlayer);
 			if (interBBSMode == 1) {
-				unseen_ibbs_msgs(player);
+				unseen_ibbs_msgs(gPlayer);
 			}
 			break;
 		case '3':
-			state_of_the_galaxy(player);
+			state_of_the_galaxy(gPlayer);
 			od_printf("\r\nPress a key to continue\r\n");
 			od_get_key(TRUE);
 			break;
@@ -2819,7 +2930,7 @@ int main(int argc, char **argv)
 			break;
 		}
 	} while (tolower(c) != 'q');
-	free(player);
+	free(gPlayer);
 	od_exit(0, FALSE);
 }
 
