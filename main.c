@@ -9,6 +9,10 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <sys/stat.h>
+
+#include <lua/lua.h>
+#include <lua/lauxlib.h>
+
 #include "interbbs2.h"
 #include "inih/ini.h"
 
