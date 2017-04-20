@@ -10,8 +10,8 @@
 #include <stdint.h>
 #include <sys/stat.h>
 
-#include <lua/lua.h>
-#include <lua/lauxlib.h>
+#include <lua5.3/lua.h>
+#include <lua5.3/lauxlib.h>
 
 #include "interbbs2.h"
 #include "inih/ini.h"
