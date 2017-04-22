@@ -1,24 +1,33 @@
-Here is what I have setup running Mystic under Windows.
-
-(D3) Exec DOOR32 program
-c:\bbs\doors\gdyn\start.bat %P\door32.sys %3 %0
-
-%P - passes the node temporary directory for dropfiles
-%3 - passes the node number
-%0 - passes the socket handle on Windows (I added this due to an issue)
-
-The batch file that I'm using is simply:
-
-c:
-cd \bbs\doors\gdyn\
-galacticdynasty.exe -D %1 -N %2 -SOCKET %3   
-
-Hope this helps some people out a bit.
-
----
-
-Dan Richter
-aka Black Panther
-Sysop - Castle Rock BBS
-telnet://castlerockbbs.com
-The sparrows are flying again... 
+Galactic Dynasty                                                                
+by Andrew Pamment (apam)                                                        
+                                                                                
+Installation Instructions for Mystic BBS v1.12 A31                              
+written by Dan Richter (aka Black Panther)                                      
+                                                                                
+INSTALLATION:                                                                   
+                                                                                
+Unpack into ..\bbs\doors\gdyn\                                                  
+(or directory of your choice)                                                   
+                                                                                
+run MYSTIC -CFG                                                                 
+                                                                                
+Mystic v 1.12 A31                                                               
+-----------------                                                               
+                                                                                
+Display Text  : (G)alactic Dynasty                                              
+Lightbar Low  : (G)alactic Dynasty                                              
+Lightbar High : (G)alactic Dynasty                                              
+Hot Key       : G                                                               
+Access        :                                                                 
+Display Type  : Access                                                          
+X Y           : 0   0                                                           
+Timer         : 0                                                               
+Timer Type    : Interval             Redraw  : Yes                              
+Command----------------------Data--------------------------------------         
+(D3)Exec DOOR32 program      c:\bbs\doors\gdyn\start.bat %P\door32.sys %3 %0    
+                                                                                
+                                                                                
+START.BAT                                                                       
+c:                                                                              
+cd \bbs\doors\gdyn\                                                             
+galacticdynasty.exe -D %1 -N %2 -SOCKET %3        
