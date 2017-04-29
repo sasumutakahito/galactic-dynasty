@@ -1369,37 +1369,36 @@ int do_interbbs_battle(char *victim, char *attacker, int from, int troops, int g
 			msg->plunder_food = plunder_food;
 		}
 
-		if (victory_chance > 0.75) {
-			victory_chance = 0.75;
-		}
-
 		msg->troops = troops * victory_chance;
 		msg->generals = generals * victory_chance;
 		msg->fighters = fighters * victory_chance;
 
-		enemy_troops = victim_player->troops * victory_chance;
-		enemy_generals = victim_player->generals * victory_chance;
-		enemy_defence_stations = victim_player->defence_stations * victory_chance;
+		enemy_troops = (int)((float)victim_player->troops * (1.f - (float)victory_chance));
+		enemy_generals = (int)((float)victim_player->generals * (1.f - (float)victory_chance));
+		enemy_defence_stations = (int)((float)victim_player->defence_stations * (1.f - (float)victory_chance));
 
 
 		snprintf(message, 256, "%s from %s attacked you and won, you lost %d citizens, %d credits, %d food, %d troops, %d generals, %d defence stations.", attacker, bbs_name,
-			plunder_people, plunder_credits, plunder_food, victim_player->troops - enemy_troops, victim_player->generals - enemy_generals, victim_player->defence_stations - enemy_defence_stations);
+			plunder_people, plunder_credits, plunder_food, enemy_troops, enemy_generals, enemy_defence_stations);
+		
+		victim_player->troops -= enemy_troops;
+		victim_player->generals -= enemy_generals;
+		victim_player->defence_stations -= enemy_defence_stations;
 		msg->score = 1;
 	} else {
 		// defeat
-		if (victory_chance > 0.75) {
-			victory_chance = 0.75;
-		}
-
 		msg->troops = troops * victory_chance;
 		msg->generals = generals * victory_chance;
 		msg->fighters = fighters * victory_chance;
 
-		enemy_troops = victim_player->troops * victory_chance;
-		enemy_generals = victim_player->generals * victory_chance;
-		enemy_defence_stations = victim_player->defence_stations * victory_chance;
+		enemy_troops = (int)((float)victim_player->troops * (1.f - (float)victory_chance));
+		enemy_generals = (int)((float)victim_player->generals * (1.f - (float)victory_chance));
+		enemy_defence_stations = (int)((float)victim_player->defence_stations * (1.f - (float)victory_chance));
 
-		snprintf(message, 256, "%s from %s attacked you and lost, %d troops, %d generals, %d defence stations were destroyed in the attack", attacker, bbs_name, victim_player->troops - enemy_troops, victim_player->generals - enemy_generals, victim_player->defence_stations - enemy_defence_stations);
+		snprintf(message, 256, "%s from %s attacked you and lost, %d troops, %d generals, %d defence stations were destroyed in the attack.", attacker, bbs_name, enemy_troops, enemy_generals, enemy_defence_stations);
+		victim_player->troops -= enemy_troops;
+		victim_player->generals -= enemy_generals;
+		victim_player->defence_stations -= enemy_defence_stations;
 		msg->score = 0;
 	}
 
@@ -1411,10 +1410,6 @@ int do_interbbs_battle(char *victim, char *attacker, int from, int troops, int g
 	strcpy(msg->victim_name, victim);
 
 	msg->created = time(NULL);
-
-	victim_player->troops = enemy_troops;
-	victim_player->generals = enemy_generals;
-	victim_player->defence_stations = enemy_defence_stations;
 
 	save_player(victim_player);
 	free(victim_player);
@@ -1833,6 +1828,9 @@ void perform_maintenance()
 #else
 			system("./reset.sh");
 #endif				
+			if(unlink("inuse.flg") != 0) {
+				perror("unlink ");
+			}
 			exit(0);
 		}
 		fprintf(stderr, "Parsed %d inbound messages\nForwarded %d messages\n", i, k);
