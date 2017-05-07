@@ -912,7 +912,7 @@ void build_interbbs_scorefile()
 			fclose(fptr2);
 		}
 		for (i=0;i<player_count;i++) {
-			fprintf(fptr, " %-31s %-31s %13d\r\n", scores[i]->player_name, scores[i]->bbs_name, scores[i]->score);
+			fprintf(fptr, " %-31.31s %-31.31s %13d\r\n", scores[i]->player_name, scores[i]->bbs_name, scores[i]->score);
 		}
 
 		fptr2 = fopen("ibbs_score_footer.ans", "r");
@@ -940,7 +940,7 @@ void build_interbbs_scorefile()
 			fclose(fptr2);
 		}
 		for (i=0;i<player_count;i++) {
-			fprintf(fptr, " %-31s %-31s %13d\r\n", scores[i]->player_name, scores[i]->bbs_name, scores[i]->score);
+			fprintf(fptr, " %-31.31s %-31.31s %13d\r\n", scores[i]->player_name, scores[i]->bbs_name, scores[i]->score);
 		}
 
 		fptr2 = fopen("ibbs_score_footer.asc", "r");
@@ -1002,7 +1002,7 @@ void build_scorefile()
 		sqlite3_prepare_v2(db, sqlbuffer, strlen(sqlbuffer) + 1, &stmt, NULL);
 		while (sqlite3_step(stmt) == SQLITE_ROW) {
 			player = load_player_gn((char *)sqlite3_column_text(stmt, 0));
-			fprintf(fptr, " %-64s %13d\r\n", player->gamename, calculate_score(player));
+			fprintf(fptr, " %-64.64s %13d\r\n", player->gamename, calculate_score(player));
 			free(player);
 		}
 
@@ -1964,7 +1964,7 @@ void game_loop(player_t *player)
 	int done;
 	float starvation;
 	float loyalty;
-
+	
 	char message[256];
 	char buffer[8];
 	ibbsmsg_t msg;
@@ -2067,6 +2067,9 @@ void game_loop(player_t *player)
 			i = (troop_wages < player->credits ? troop_wages : player->credits);
 		} else {
 			i = atoi(buffer);
+			if (i > player->credits) {
+				i = player->credits;
+			}
 		}
 
 		if (i < troop_wages) {
@@ -2089,6 +2092,9 @@ void game_loop(player_t *player)
 			i = (citizen_hunger < player->food ? citizen_hunger : player->food);
 		} else {
 			i = atoi(buffer);
+			if (i > player->food) {
+				i = player->food;
+			}
 		}
 
 		if (i < citizen_hunger) {
@@ -2525,7 +2531,7 @@ void game_loop(player_t *player)
 			}
 		}
 
-		if (loyalty < 1) {
+		if (loyalty < 1 && player->troops * loyalty > 0) {
 			od_printf("%d troops fled the empire\r\n", player->troops - (player->troops * loyalty));
 			player->troops -= player->troops - (player->troops * loyalty);
 		}
