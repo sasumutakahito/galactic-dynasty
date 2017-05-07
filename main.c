@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <sys/stat.h>
+#include <stdarg.h>
 
 #include <lua.h>
 #include <lauxlib.h>
@@ -79,13 +80,13 @@ typedef struct ibbsmsg {
 	uint32_t from;
 	char player_name[17];
 	char victim_name[17];
-	int32_t score;
-	int32_t troops;
-	int32_t generals;
-	int32_t fighters;
-	int32_t plunder_credits;
-	int32_t plunder_food;
-	int32_t plunder_people;
+	uint32_t score;
+	uint32_t troops;
+	uint32_t generals;
+	uint32_t fighters;
+	uint32_t plunder_credits;
+	uint32_t plunder_food;
+	uint32_t plunder_people;
 	char message[256];
 	uint32_t created;
 	uint32_t turns_per_day;
@@ -126,6 +127,31 @@ void msg2he(ibbsmsg_t *msg) {
 	msg->created = ntohl(msg->created);
 	msg->turns_per_day = ntohl(msg->turns_per_day);
 	msg->turns_in_protection = ntohl(msg->turns_in_protection);
+}
+
+void log(char *fmt, ...) {
+	char buffer[512];
+	struct tm time_now;
+	time_t timen;
+	FILE *logfptr;
+
+	timen = time(NULL);
+
+	localtime_r(&timen, &time_now);
+
+	snprintf(buffer, 512, "%04d%02d%02d.log", time_now.tm_year + 1900, time_now.tm_mon + 1, time_now.tm_mday);
+	logfptr = fopen(buffer, "a");
+    if (!logfptr) {
+		return;
+	}
+	va_list ap;
+	va_start(ap, fmt);
+	vsnprintf(buffer, 512, fmt, ap);
+	va_end(ap);
+
+	fprintf(logfptr, "%02d:%02d:%02d %s\n", time_now.tm_hour, time_now.tm_min, time_now.tm_sec, buffer);
+
+	fclose(logfptr);	
 }
 
 static int handler(void* user, const char* section, const char* name,
@@ -1051,7 +1077,7 @@ void build_scorefile()
 		sqlite3_prepare_v2(db, sqlbuffer, strlen(sqlbuffer) + 1, &stmt, NULL);
 		while (sqlite3_step(stmt) == SQLITE_ROW) {
 			player = load_player_gn((char *)sqlite3_column_text(stmt, 0));
-			fprintf(fptr, " %-64s %13d\r\n", player->gamename, calculate_score(player));
+			fprintf(fptr, " %-64.64s %13d\r\n", player->gamename, calculate_score(player));
 			free(player);
 		}
 
@@ -1315,6 +1341,7 @@ int do_interbbs_battle(char *victim, char *attacker, int from, int troops, int g
 	}
 
 	if (strlen(bbs_name) == 0) {
+		log("InterBBS Battle: Empire name mismatch");
 		return -1;
 	}
 
@@ -1401,6 +1428,8 @@ int do_interbbs_battle(char *victim, char *attacker, int from, int troops, int g
 		victim_player->defence_stations -= enemy_defence_stations;
 		msg->score = 0;
 	}
+
+	log("InterBBS Battle: Attack %d, Defence %d, Victory Chance %f, Battle %d", attack, defence, victory_chance, battle);
 
 	send_message(victim_player, NULL, message);
 
@@ -1579,6 +1608,8 @@ void perform_maintenance()
 	timenow = time(NULL);
 	int reset = 0;
 
+	log("Performing maintenance...");
+
 	fptr = fopen("lastrun.dat", "rb");
 
 	if (fptr) {
@@ -1635,6 +1666,7 @@ void perform_maintenance()
 			switch(msg.type) {
 			case 1:
 				// add score to database
+				log("Got score file packet for player %s", msg.player_name);
 				rc = sqlite3_open("interbbs.db3", &db);
 				if (rc) {
 					// Error opening the database
@@ -1678,16 +1710,20 @@ void perform_maintenance()
 
 				break;
 			case 2:
+				log("Got invasion packet for: %s from: %s", msg.victim_name, msg.player_name);
 				// perform invasion
 				if (do_interbbs_battle(msg.victim_name, msg.player_name, msg.from, msg.troops, msg.generals, msg.fighters, &outboundmsg) == 0) {
 					outboundmsg.turns_in_protection = turns_in_protection;
 					outboundmsg.turns_per_day = turns_per_day;
 					msg2ne(&outboundmsg);
 					IBSend(&InterBBSInfo, msg.from, &outboundmsg, sizeof(ibbsmsg_t));
+				} else {
+					log("Invasion failed");
 				}
 				break;
 			case 3:
 				// return troops
+				log("Got return troops packet for: %s", msg.player_name);
 				player = load_player_gn(msg.player_name);
 				if (player != NULL) {
 					player->troops += msg.troops;
@@ -1710,6 +1746,8 @@ void perform_maintenance()
 					send_message(player, NULL, message);
 					save_player(player);
 					free(player);
+				} else {
+					log("return troops failed");
 				}
 				break;
 			case 4:
@@ -2531,8 +2569,8 @@ void game_loop(player_t *player)
 			}
 		}
 
-		if (loyalty < 1 && player->troops * loyalty > 0) {
-			od_printf("%d troops fled the empire\r\n", player->troops - (player->troops * loyalty));
+		if (loyalty < 1) {
+			od_printf("%d troops fled the empire\r\n", (int)(player->troops - ((float)player->troops * loyalty)));
 			player->troops -= player->troops - (player->troops * loyalty);
 		}
 
