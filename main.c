@@ -131,15 +131,15 @@ void msg2he(ibbsmsg_t *msg) {
 
 void log(char *fmt, ...) {
 	char buffer[512];
-	struct tm time_now;
+	struct tm *time_now;
 	time_t timen;
 	FILE *logfptr;
 
 	timen = time(NULL);
 
-	localtime_r(&timen, &time_now);
+	time_now = localtime(&timen);
 
-	snprintf(buffer, 512, "%04d%02d%02d.log", time_now.tm_year + 1900, time_now.tm_mon + 1, time_now.tm_mday);
+	snprintf(buffer, 512, "%04d%02d%02d.log", time_now->tm_year + 1900, time_now->tm_mon + 1, time_now->tm_mday);
 	logfptr = fopen(buffer, "a");
     if (!logfptr) {
 		return;
@@ -149,7 +149,7 @@ void log(char *fmt, ...) {
 	vsnprintf(buffer, 512, fmt, ap);
 	va_end(ap);
 
-	fprintf(logfptr, "%02d:%02d:%02d %s\n", time_now.tm_hour, time_now.tm_min, time_now.tm_sec, buffer);
+	fprintf(logfptr, "%02d:%02d:%02d %s\n", time_now->tm_hour, time_now->tm_min, time_now->tm_sec, buffer);
 
 	fclose(logfptr);	
 }
