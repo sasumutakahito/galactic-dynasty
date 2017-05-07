@@ -2154,7 +2154,11 @@ void game_loop(player_t *player)
 			od_printf(" (2) Generals .................500    %6d     %6d\r\n", player->generals, player->credits / 500);
 			od_printf(" (3) Fighters ................1000    %6d     %6d\r\n", player->fighters, player->credits / 1000);
 			od_printf(" (4) Defence Stations ........1000    %6d     %6d\r\n", player->defence_stations, player->credits / 1000);
-			od_printf(" (5) Command Ship Components 10000    %6d%%    %5d%%\r\n", player->command_ship, player->credits / 10000);
+			if (player->command_ship == 100) {
+				od_printf(" (5) Command Ship Components 10000    %6d%%    `bright green`complete`white`\r\n", player->command_ship);
+			} else {
+				od_printf(" (5) Command Ship Components 10000    %6d%%    %5d%%\r\n", player->command_ship, player->credits / 10000);
+			}
 			od_printf(" (6) Colonize Planets ........2000    %6d     %6d\r\n", player->planets_ore + player->planets_food + player->planets_industrial + player->planets_military + player->planets_urban, player->credits / 2000);
 			od_printf(" (7) Food .....................100    %6d     %6d\r\n", player->food, player->credits / 100);
 			od_printf(" (8) Spies ...................5000    %6d     %6d\r\n", player->spies, player->credits / 5000);
