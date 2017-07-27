@@ -1311,18 +1311,18 @@ void save_player(player_t *player) {
 	build_scorefile();
 }
 
-int do_interbbs_battle(char *victim, char *attacker, int from, int troops, int generals, int fighters, ibbsmsg_t *msg)
+int do_interbbs_battle(char *victim, char *attacker, int from, uint32_t troops, uint32_t generals, uint32_t fighters, ibbsmsg_t *msg)
 {
-	int plunder_people;
-	int plunder_credits;
-	int plunder_food;
-	int attack;
-	int defence;
+	uint32_t plunder_people;
+	uint32_t plunder_credits;
+	uint32_t plunder_food;
+	uint32_t attack;
+	uint32_t defence;
 	float victory_chance;
 	int battle;
-	int enemy_troops;
-	int enemy_generals;
-	int enemy_defence_stations;
+	uint32_t enemy_troops;
+	uint32_t enemy_generals;
+	uint32_t enemy_defence_stations;
 	char bbs_name[40];
 	char message[256];
 	int i;
@@ -1405,7 +1405,7 @@ int do_interbbs_battle(char *victim, char *attacker, int from, int troops, int g
 		enemy_defence_stations = (int)((float)victim_player->defence_stations * (1.f - (float)victory_chance));
 
 
-		snprintf(message, 256, "%s from %s attacked you and won, you lost %d citizens, %d credits, %d food, %d troops, %d generals, %d defence stations.", attacker, bbs_name,
+		snprintf(message, 256, "%s from %s attacked you and won, you lost %u citizens, %u credits, %u food, %u troops, %u generals, %u defence stations.", attacker, bbs_name,
 			plunder_people, plunder_credits, plunder_food, enemy_troops, enemy_generals, enemy_defence_stations);
 		
 		victim_player->troops -= enemy_troops;
@@ -1422,14 +1422,14 @@ int do_interbbs_battle(char *victim, char *attacker, int from, int troops, int g
 		enemy_generals = (int)((float)victim_player->generals * (1.f - (float)victory_chance));
 		enemy_defence_stations = (int)((float)victim_player->defence_stations * (1.f - (float)victory_chance));
 
-		snprintf(message, 256, "%s from %s attacked you and lost, %d troops, %d generals, %d defence stations were destroyed in the attack.", attacker, bbs_name, enemy_troops, enemy_generals, enemy_defence_stations);
+		snprintf(message, 256, "%s from %s attacked you and lost, %u troops, %u generals, %u defence stations were destroyed in the attack.", attacker, bbs_name, enemy_troops, enemy_generals, enemy_defence_stations);
 		victim_player->troops -= enemy_troops;
 		victim_player->generals -= enemy_generals;
 		victim_player->defence_stations -= enemy_defence_stations;
 		msg->score = 0;
 	}
 
-	log("InterBBS Battle: Attack %d, Defence %d, Victory Chance %f, Battle %d", attack, defence, victory_chance, battle);
+	log("InterBBS Battle: Attack %u, Defence %u, Victory Chance %f, Battle %d", attack, defence, victory_chance, battle);
 
 	send_message(victim_player, NULL, message);
 
@@ -1448,22 +1448,22 @@ int do_interbbs_battle(char *victim, char *attacker, int from, int troops, int g
 void do_battle(player_t *victim, player_t *attacker, int troops, int generals, int fighters)
 {
 	char message[256];
-	int attack;
-	int defence;
+	uint32_t attack;
+	uint32_t defence;
 
 	int battle;
 
-	int plunder_people;
-	int plunder_credits;
-	int plunder_food;
-	int plunder_planet_ore;
-	int plunder_planet_industrial;
-	int plunder_planet_military;
-	int plunder_planet_food;
+	uint32_t plunder_people;
+	uint32_t plunder_credits;
+	uint32_t plunder_food;
+	uint32_t plunder_planet_ore;
+	uint32_t plunder_planet_industrial;
+	uint32_t plunder_planet_military;
+	uint32_t plunder_planet_food;
 
-	int enemy_troops;
-	int enemy_generals;
-	int enemy_defence_stations;
+	uint32_t enemy_troops;
+	uint32_t enemy_generals;
+	uint32_t enemy_defence_stations;
 	float victory_chance;
 
 	// attack soldiers
@@ -1485,7 +1485,7 @@ void do_battle(player_t *victim, player_t *attacker, int troops, int generals, i
 		if (plunder_people > 0) {
 			victim->population -= plunder_people;
 			attacker->population += plunder_people;
-			od_printf("   - %d citizens\r\n", plunder_people);
+			od_printf("   - %u citizens\r\n", plunder_people);
 		}
 
 		// credits
@@ -1493,39 +1493,39 @@ void do_battle(player_t *victim, player_t *attacker, int troops, int generals, i
 		if (plunder_credits > 0) {
 			victim->credits -= plunder_credits;
 			attacker->credits += plunder_credits;
-			od_printf("   - %d credits\r\n", plunder_credits);
+			od_printf("   - %u credits\r\n", plunder_credits);
 		}
 		// food
 		plunder_food = victim->food * 0.10;
 		if (plunder_food > 0) {
 			victim->food -= plunder_food;
 			attacker->food += plunder_food;
-			od_printf("   - %d food\r\n", plunder_food);
+			od_printf("   - %u food\r\n", plunder_food);
 		}
 		// planets
 		plunder_planet_ore = victim->planets_ore * 0.05;
 		if (plunder_planet_ore > 0) {
 			victim->planets_ore -= plunder_planet_ore;
 			attacker->planets_ore += plunder_planet_ore;
-			od_printf("   - %d ore planets\r\n", plunder_planet_ore);
+			od_printf("   - %u ore planets\r\n", plunder_planet_ore);
 		}
 		plunder_planet_food = victim->planets_food * 0.05;
 		if (plunder_planet_food > 0) {
 			victim->planets_food -= plunder_planet_food;
 			attacker->planets_food += plunder_planet_food;
-			od_printf("   - %d food planets\r\n", plunder_planet_food);
+			od_printf("   - %u food planets\r\n", plunder_planet_food);
 		}
 		plunder_planet_industrial = victim->planets_industrial * 0.05;
 		if (plunder_planet_industrial > 0) {
 			victim->planets_industrial -= plunder_planet_industrial;
 			attacker->planets_industrial += plunder_planet_industrial;
-			od_printf("   - %d industrial planets\r\n", plunder_planet_industrial);
+			od_printf("   - %u industrial planets\r\n", plunder_planet_industrial);
 		}
 		plunder_planet_military = victim->planets_military * 0.05;
 		if (plunder_planet_military > 0) {
 			victim->planets_military -= plunder_planet_military;
 			attacker->planets_military += plunder_planet_military;
-			od_printf("   - %d soldier planets\r\n", plunder_planet_military);
+			od_printf("   - %u soldier planets\r\n", plunder_planet_military);
 		}
 
 		if (victory_chance > 0.75) {
@@ -1540,7 +1540,7 @@ void do_battle(player_t *victim, player_t *attacker, int troops, int generals, i
 		enemy_generals = victim->generals * victory_chance;
 		enemy_defence_stations = victim->defence_stations * victory_chance;
 
-		snprintf(message, 256, "%s attacked you and won, you lost %d citizens, %d credits, %d food, %d planets (%d ore, %d industrial, %d soldier, %d food), %d troops, %d generals, %d defence stations.", attacker->gamename,
+		snprintf(message, 256, "%s attacked you and won, you lost %u citizens, %u credits, %u food, %u planets (%u ore, %u industrial, %u soldier, %u food), %u troops, %u generals, %u defence stations.", attacker->gamename,
 			plunder_people, plunder_credits, plunder_food, plunder_planet_food + plunder_planet_military + plunder_planet_industrial + plunder_planet_ore, plunder_planet_ore, plunder_planet_industrial
 			, plunder_planet_military, plunder_planet_food,  victim->troops - enemy_troops, victim->generals - enemy_generals, victim->defence_stations - enemy_defence_stations);
 	} else {
@@ -1559,14 +1559,14 @@ void do_battle(player_t *victim, player_t *attacker, int troops, int generals, i
 
 
 		od_printf("`white`You are `bright red`defeated`white`.\r\n");
-		snprintf(message, 256, "%s attacked you and lost, %d troops, %d generals, %d defence stations were destroyed in the attack", attacker->gamename, victim->troops - enemy_troops, victim->generals - enemy_generals, victim->defence_stations - enemy_defence_stations);
+		snprintf(message, 256, "%s attacked you and lost, %u troops, %u generals, %u defence stations were destroyed in the attack", attacker->gamename, victim->troops - enemy_troops, victim->generals - enemy_generals, victim->defence_stations - enemy_defence_stations);
 
 	}
 
 	send_message(victim, NULL, message);
 
-	od_printf(" %d troops, %d generals and %d fighters return home.\r\n", troops, generals, fighters);
-	od_printf(" %d enemy troops, %d enemy generals and %d enemy defence stations were destroyed\r\n", victim->troops - enemy_troops, victim->generals - enemy_generals, victim->defence_stations - enemy_defence_stations);
+	od_printf(" %u troops, %u generals and %u fighters return home.\r\n", troops, generals, fighters);
+	od_printf(" %u enemy troops, %u enemy generals and %u enemy defence stations were destroyed\r\n", victim->troops - enemy_troops, victim->generals - enemy_generals, victim->defence_stations - enemy_defence_stations);
 
 	od_printf("\r\nPress a key to continue\r\n");
 	od_get_key(TRUE);
@@ -1734,11 +1734,11 @@ void perform_maintenance()
 						player->population += msg.plunder_people;
 						player->credits += msg.plunder_credits;
 						player->food += msg.plunder_food;
-						snprintf(message, 256, "Your armarda returned victorious, %d troops, %d generals and %d fighters returned with %d prisoners, %d credits and %d food.",
+						snprintf(message, 256, "Your armarda returned victorious, %u troops, %u generals and %u fighters returned with %u prisoners, %u credits and %u food.",
 							msg.troops, msg.generals, msg.fighters, msg.plunder_people, msg.plunder_credits, msg.plunder_food);
 
 					} else if (msg.score == 0) {
-						snprintf(message, 256, "Your armarda returned defeated, %d troops, %d generals and %d fighters returned.",
+						snprintf(message, 256, "Your armarda returned defeated, %u troops, %u generals and %u fighters returned.",
 							msg.troops, msg.generals, msg.fighters);
 					} else {
 						snprintf(message, 256, "Your armarda encounted galactic protection and all your troops returned disappointed.");
@@ -1941,18 +1941,18 @@ void state_of_the_galaxy(player_t *player) {
 	od_printf("\r\n`bright blue`============================================================\r\n");
 	od_printf(" `white`State of the Empire.               Today's turns left %d\r\n", player->turns_left);
 	od_printf("`bright blue`============================================================\r\n");
-	od_printf("`white` - Score        : %d\r\n", calculate_score(player));
-	od_printf(" - Population   : %d million\r\n", player->population);
-	od_printf(" - Food         : %d tonnes\r\n", player->food);
-	od_printf(" - Credits      : %d\r\n", player->credits);
-	od_printf(" - Troops       : %d\r\n", player->troops);
-	od_printf(" - Generals     : %d\r\n", player->generals);
-	od_printf(" - Fighters     : %d\r\n", player->fighters);
-	od_printf(" - Spies        : %d\r\n", player->spies);
-	od_printf(" - Def. Stations: %d\r\n", player->defence_stations);
+	od_printf("`white` - Score        : %u\r\n", calculate_score(player));
+	od_printf(" - Population   : %u million\r\n", player->population);
+	od_printf(" - Food         : %u tonnes\r\n", player->food);
+	od_printf(" - Credits      : %u\r\n", player->credits);
+	od_printf(" - Troops       : %u\r\n", player->troops);
+	od_printf(" - Generals     : %u\r\n", player->generals);
+	od_printf(" - Fighters     : %u\r\n", player->fighters);
+	od_printf(" - Spies        : %u\r\n", player->spies);
+	od_printf(" - Def. Stations: %u\r\n", player->defence_stations);
 	od_printf(" - Command Ship : %d%% complete\r\n", player->command_ship);
-	od_printf(" - Planets      : %d\r\n", player->planets_food + player->planets_ore + player->planets_military + player->planets_industrial + player->planets_urban);
-	od_printf("   (Ore %d) (Food %d) (Soldier %d) (Industrial %d) (Urban %d)\r\n", player->planets_ore, player->planets_food, player->planets_military, player->planets_industrial, player->planets_urban);
+	od_printf(" - Planets      : %u\r\n", player->planets_food + player->planets_ore + player->planets_military + player->planets_industrial + player->planets_urban);
+	od_printf("   (Ore %u) (Food %u) (Soldier %u) (Industrial %u) (Urban %u)\r\n", player->planets_ore, player->planets_food, player->planets_military, player->planets_industrial, player->planets_urban);
 	if (player->total_turns < turns_in_protection) {
 		od_printf("`bright yellow`You have %d turns left under protection.\r\n", turns_in_protection - player->total_turns);
 	}
@@ -1995,10 +1995,10 @@ player_t *select_victim(player_t *player, char *prompt, int type)
 
 void game_loop(player_t *player)
 {
-	int troop_wages;
-	int citizen_hunger;
-	int total_industrial;
-	int total_ore;
+	uint32_t troop_wages;
+	uint32_t citizen_hunger;
+	uint32_t total_industrial;
+	uint32_t total_ore;
 	int done;
 	float starvation;
 	float loyalty;
@@ -2014,9 +2014,9 @@ void game_loop(player_t *player)
 	int j;
 	char c;
 
-	int troops_to_send;
-	int generals_to_send;
-	int fighters_to_send;
+	uint32_t troops_to_send;
+	uint32_t generals_to_send;
+	uint32_t fighters_to_send;
 	int event_rand;
 	int event_mod;
 
@@ -2096,8 +2096,8 @@ void game_loop(player_t *player)
 
 		// Troops require money
 		troop_wages = player->troops * 10 + player->generals * 15 + player->fighters * 20 + player->defence_stations * 20;
-		od_printf("Your military requires `bright yellow`%d`white` credits in wages.\r\n", troop_wages);
-		od_printf("Pay them (`bright green`%d`white`) : ", (troop_wages < player->credits ? troop_wages : player->credits));
+		od_printf("Your military requires `bright yellow`%u`white` credits in wages.\r\n", troop_wages);
+		od_printf("Pay them (`bright green`%u`white`) : ", (troop_wages < player->credits ? troop_wages : player->credits));
 
 		od_input_str(buffer, 8, '0', '9');
 
@@ -2121,8 +2121,8 @@ void game_loop(player_t *player)
 
 		// People require food
 		citizen_hunger = (player->population / 10) + 1;
-		od_printf("Your citizens need `bright yellow`%d`white` tonnes of food.\r\n", citizen_hunger);
-		od_printf("Feed them (`bright green`%d`white`) : ", (citizen_hunger < player->food ? citizen_hunger : player->food));
+		od_printf("Your citizens need `bright yellow`%u`white` tonnes of food.\r\n", citizen_hunger);
+		od_printf("Feed them (`bright green`%u`white`) : ", (citizen_hunger < player->food ? citizen_hunger : player->food));
 
 		od_input_str(buffer, 8, '0', '9');
 
@@ -2148,7 +2148,7 @@ void game_loop(player_t *player)
 		while (done == 0) {
 			// do you want to buy anything
 			od_printf("`bright green`============================================================\r\n");
-			od_printf("`white` Buy Stuff                 Your funds: %d credits\r\n", player->credits);
+			od_printf("`white` Buy Stuff                 Your funds: %u credits\r\n", player->credits);
 			od_printf("`bright green`============================`green`[`white`Price`green`]`bright green`=`green`[`white`You Have`green`]`bright green`=`green`[`white`Can Afford`green`]`bright-green`=\r\n");
 			od_printf("`white` (1) Troops ...................100    %6d     %6d\r\n", player->troops, player->credits / 100);
 			od_printf(" (2) Generals .................500    %6d     %6d\r\n", player->generals, player->credits / 500);
@@ -2169,7 +2169,7 @@ void game_loop(player_t *player)
 			c = od_get_answer("12345678dD\r");
 			switch (c) {
 				case '1':
-					od_printf("How many troops do you want to buy? (MAX `bright yellow`%d`white`) ", player->credits / 100);
+					od_printf("How many troops do you want to buy? (MAX `bright yellow`%u`white`) ", player->credits / 100);
 					od_input_str(buffer, 8, '0', '9');
 					if (strlen(buffer) != 0) {
 						i = atoi(buffer);
@@ -2182,7 +2182,7 @@ void game_loop(player_t *player)
 					}
 					break;
 				case '2':
-					od_printf("How many generals do you want to buy? (MAX `bright yellow`%d`white`) ", player->credits / 500);
+					od_printf("How many generals do you want to buy? (MAX `bright yellow`%u`white`) ", player->credits / 500);
 					od_input_str(buffer, 8, '0', '9');
 					if (strlen(buffer) != 0) {
 						i = atoi(buffer);
@@ -2195,7 +2195,7 @@ void game_loop(player_t *player)
 					}
 					break;
 				case '3':
-					od_printf("How many fighters do you want to buy? (MAX `bright yellow`%d`white`) ", player->credits / 1000);
+					od_printf("How many fighters do you want to buy? (MAX `bright yellow`%u`white`) ", player->credits / 1000);
 					od_input_str(buffer, 8, '0', '9');
 					if (strlen(buffer) != 0) {
 						i = atoi(buffer);
@@ -2208,7 +2208,7 @@ void game_loop(player_t *player)
 					}
 					break;
 				case '4':
-					od_printf("How many defence stations do you want to buy? (MAX `bright yellow`%d`white`) ", player->credits / 1000);
+					od_printf("How many defence stations do you want to buy? (MAX `bright yellow`%u`white`) ", player->credits / 1000);
 					od_input_str(buffer, 8, '0', '9');
 					if (strlen(buffer) != 0) {
 						i = atoi(buffer);
@@ -2221,7 +2221,7 @@ void game_loop(player_t *player)
 					}
 					break;
 				case '5':
-					od_printf("How many command ship components do you want to buy? (MAX `bright yellow`%d`white`) ", (player->credits / 10000 < 100 - player->command_ship ? player->credits / 10000:100 - player->command_ship));
+					od_printf("How many command ship components do you want to buy? (MAX `bright yellow`%u`white`) ", (player->credits / 10000 < 100 - player->command_ship ? player->credits / 10000:100 - player->command_ship));
 					od_input_str(buffer, 8, '0', '9');
 					if (strlen(buffer) != 0) {
 						i = atoi(buffer);
@@ -2236,7 +2236,7 @@ void game_loop(player_t *player)
 					}
 					break;
 				case '6':
-					od_printf("How many planets do you want to buy? (MAX `bright yellow`%d`white`) ", player->credits / 2000);
+					od_printf("How many planets do you want to buy? (MAX `bright yellow`%u`white`) ", player->credits / 2000);
 					od_input_str(buffer, 8, '0', '9');
 					if (strlen(buffer) != 0) {
 						i = atoi(buffer);
@@ -2275,7 +2275,7 @@ void game_loop(player_t *player)
 					}
 					break;
 				case '7':
-					od_printf("How much food do you want to buy? (MAX `bright yellow`%d`white`) ", player->credits / 100);
+					od_printf("How much food do you want to buy? (MAX `bright yellow`%u`white`) ", player->credits / 100);
 					od_input_str(buffer, 8, '0', '9');
 					if (strlen(buffer) != 0) {
 						i = atoi(buffer);
@@ -2288,7 +2288,7 @@ void game_loop(player_t *player)
 					}
 					break;
 				case '8':
-					od_printf("How many spies do you want to buy? (MAX `bright yellow`%d`white`) ", player->credits / 5000);
+					od_printf("How many spies do you want to buy? (MAX `bright yellow`%u`white`) ", player->credits / 5000);
 					od_input_str(buffer, 8, '0', '9');
 					if (strlen(buffer) != 0) {
 						i = atoi(buffer);
@@ -2311,7 +2311,7 @@ void game_loop(player_t *player)
 		// covert operations
 		if (player->spies > 0) {
 			od_printf("`bright magenta`============================================================\r\n");
-			od_printf("`white` Covert Operations                 Spies: %d\r\n", player->spies);
+			od_printf("`white` Covert Operations                 Spies: %u\r\n", player->spies);
 			od_printf("`bright magenta`=============================`magenta`[`white`Price`magenta`]`bright magenta`========================\r\n");
 			od_printf("`white` (1) Spy on someone............1000\r\n");
 			od_printf(" (`bright green`D`white`) Done\r\n");
@@ -2352,14 +2352,14 @@ void game_loop(player_t *player)
 					// do attack
 					if (player->troops > 0) {
 						while (1) {
-							od_printf("\r\nSend how many troops? (MAX %d) ", player->troops);
+							od_printf("\r\nSend how many troops? (MAX %u) ", player->troops);
 							od_input_str(buffer, 8, '0', '9');
 							if (strlen(buffer) > 0) {
 								i = atoi(buffer);
 								if (i > player->troops) {
 									od_printf("\r\nYou don't have that many!\r\n");
 								} else if (i > 0) {
-									od_printf("\r\nSending %d troops.\r\n", i);
+									od_printf("\r\nSending %u troops.\r\n", i);
 									troops_to_send = i;
 									player->troops -= i;
 									break;
@@ -2376,14 +2376,14 @@ void game_loop(player_t *player)
 					if (troops_to_send > 0) {
 						if (player->generals > 0) {
 							while (1) {
-								od_printf("\r\nSend how many generals? (MAX %d) ", player->generals);
+								od_printf("\r\nSend how many generals? (MAX %u) ", player->generals);
 								od_input_str(buffer, 8, '0', '9');
 								if (strlen(buffer) > 0) {
 									i = atoi(buffer);
 									if (i > player->generals) {
 										od_printf("\r\nYou don't have that many!\r\n");
 									} else {
-										od_printf("\r\nSending %d generals.\r\n", i);
+										od_printf("\r\nSending %u generals.\r\n", i);
 										generals_to_send = i;
 										player->generals -= i;
 										break;
@@ -2395,14 +2395,14 @@ void game_loop(player_t *player)
 						}
 						if (player->fighters > 0) {
 							while (1) {
-								od_printf("\r\nSend how many fighters? (MAX %d) ", player->fighters);
+								od_printf("\r\nSend how many fighters? (MAX %u) ", player->fighters);
 								od_input_str(buffer, 8, '0', '9');
 								if (strlen(buffer) > 0) {
 									i = atoi(buffer);
 									if (i > player->fighters) {
 										od_printf("\r\nYou don't have that many!\r\n");
 									} else {
-										od_printf("\r\nSending %d fighters.\r\n", i);
+										od_printf("\r\nSending %u fighters.\r\n", i);
 										fighters_to_send = i;
 										player->fighters -= i;
 										break;
@@ -2439,14 +2439,14 @@ void game_loop(player_t *player)
 							msg.created = time(NULL);
 							if (player->troops > 0) {
 								while (1) {
-									od_printf("\r\nSend how many troops? (MAX %d) ", player->troops);
+									od_printf("\r\nSend how many troops? (MAX %u) ", player->troops);
 									od_input_str(buffer, 8, '0', '9');
 									if (strlen(buffer) > 0) {
 										i = atoi(buffer);
 										if (i > player->troops) {
 											od_printf("\r\nYou don't have that many!\r\n");
 										} else if (i > 0) {
-											od_printf("\r\nSending %d troops.\r\n", i);
+											od_printf("\r\nSending %u troops.\r\n", i);
 											msg.troops = i;
 											player->troops -= i;
 											break;
@@ -2461,14 +2461,14 @@ void game_loop(player_t *player)
 							if (msg.troops > 0) {
 								if (player->generals > 0) {
 									while (1) {
-										od_printf("\r\nSend how many generals? (MAX %d) ", player->generals);
+										od_printf("\r\nSend how many generals? (MAX %u) ", player->generals);
 										od_input_str(buffer, 8, '0', '9');
 										if (strlen(buffer) > 0) {
 											i = atoi(buffer);
 											if (i > player->generals) {
 												od_printf("\r\nYou don't have that many!\r\n");
 											} else {
-												od_printf("\r\nSending %d generals.\r\n", i);
+												od_printf("\r\nSending %u generals.\r\n", i);
 												msg.generals = i;
 												player->generals -= i;
 												break;
@@ -2480,14 +2480,14 @@ void game_loop(player_t *player)
 								}
 								if (player->fighters > 0) {
 									while (1) {
-										od_printf("\r\nSend how many fighters? (MAX %d) ", player->fighters);
+										od_printf("\r\nSend how many fighters? (MAX %u) ", player->fighters);
 										od_input_str(buffer, 8, '0', '9');
 										if (strlen(buffer) > 0) {
 											i = atoi(buffer);
 											if (i > player->fighters) {
 												od_printf("\r\nYou don't have that many!\r\n");
 											} else {
-												od_printf("\r\nSending %d fighters.\r\n", i);
+												od_printf("\r\nSending %u fighters.\r\n", i);
 												msg.fighters = i;
 												player->fighters -= i;
 												break;
@@ -2518,13 +2518,13 @@ void game_loop(player_t *player)
 		// Productions
 
 		if (player->planets_food > 0) {
-			od_printf("Your food planets produced %d food.\r\n", 50 * player->planets_food);
+			od_printf("Your food planets produced %u food.\r\n", 50 * player->planets_food);
 
 			player->food += 50 * player->planets_food;
 		}
 
 		if (player->planets_military > 0) {
-			od_printf("Your soldier planets provided %d troops\r\n", player->planets_military * 10);
+			od_printf("Your soldier planets provided %u troops\r\n", player->planets_military * 10);
 
 			player->troops += 10 * player->planets_military;
 		}
@@ -2536,7 +2536,7 @@ void game_loop(player_t *player)
 				total_ore = player->planets_ore * 1000;
 			}
 
-			od_printf("Your ore planets mined %d worth of minerals\r\n", total_ore);
+			od_printf("Your ore planets mined %u worth of minerals\r\n", total_ore);
 
 			player->credits += total_ore;
 		}
@@ -2549,11 +2549,11 @@ void game_loop(player_t *player)
 				total_industrial = player->planets_industrial * 1000;
 			}
 
-			od_printf("Your industrial planets produced %d worth of goods\r\n", total_industrial);
+			od_printf("Your industrial planets produced %u worth of goods\r\n", total_industrial);
 
 			player->credits += total_industrial;
 		}
-		od_printf("Taxes produce %d credits\r\n", player->population * 23);
+		od_printf("Taxes produce %u credits\r\n", player->population * 23);
 
 		player->credits += player->population * 23;
 
