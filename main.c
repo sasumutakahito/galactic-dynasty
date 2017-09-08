@@ -2159,7 +2159,7 @@ void game_loop(player_t *player)
 			// do you want to buy anything
 			od_printf("`bright green`============================================================\r\n");
 			od_printf("`white` Buy Stuff                 Your funds: %u credits\r\n", player->credits);
-			od_printf("`bright green`============================`green`[`white`Price`green`]`bright green`=`green`[`white`You Have`green`]`bright green`=`green`[`white`Can Afford`green`]`bright-green`=\r\n");
+			od_printf("`bright green`============================`green`[`white`Price`green`]`bright green`=`green`[`white`You Have`green`]`bright green`=`green`[`white`Can Afford`green`]`bright green`=\r\n");
 			od_printf("`white` (1) Troops ...................100    %6u     %6u\r\n", player->troops, player->credits / 100);
 			od_printf(" (2) Generals .................500    %6u     %6u\r\n", player->generals, player->credits / 500);
 			od_printf(" (3) Fighters ................1000    %6u     %6u\r\n", player->fighters, player->credits / 1000);
@@ -2315,9 +2315,13 @@ void game_loop(player_t *player)
 					{
 						bank_done = 0;
 						while (!bank_done) {
-							od_printf("Your current bank balance is %lld credits. Interest is %f%% per day.\r\n", player->bank_balance, (player->bank_balance > 0 ? 0.10f : 5));
+							if (player->bank_balance >= 0) {
+								od_printf("Your current bank balance is `bright green`%lld `white`credits. Interest is %f%% per day.\r\n", player->bank_balance, (player->bank_balance > 0 ? 0.10f : 5));
+							} else {
+								od_printf("Your current bank balance is `bright red`%lld `white`credits. Interest is %f%% per day.\r\n", player->bank_balance, (player->bank_balance > 0 ? 0.10f : 5));
+							}
 							od_printf("Your current allowed overdraft is %u credits.\r\n", calculate_score(player) / 2);
-							od_printf("Would you like to (D)eposit, (W)ithdraw or (L)eave? ");
+							od_printf("Would you like to (D)eposit, (W)ithdraw or (`bright green`L`white`)eave? ");
 							c = od_get_answer("DdWwLl\r");
 							switch (c) {
 								case 'D':
@@ -2349,6 +2353,7 @@ void game_loop(player_t *player)
 									}									
 									break;
 								default:
+									od_printf("\r\n\r\n");
 									bank_done = 1;
 									break;
 							}
