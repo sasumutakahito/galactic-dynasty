@@ -12,6 +12,8 @@
 
 #ifdef _MSC_VER
 #include <winsock2.h>
+#else
+#include <arpa/inet.h>
 #endif // _MSC_VER
 
 #define NUM_KEYWORDS 3
