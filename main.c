@@ -20,8 +20,8 @@
 #define TURNS_PER_DAY 5
 #define TURNS_IN_PROTECTION 0
 #if _MSC_VER
-#include <windows.h>
 #include <winsock2.h>
+#include <windows.h>
 #define snprintf _snprintf
 #define strcasecmp _stricmp
 #else
@@ -1179,7 +1179,7 @@ player_t *new_player(char *bbsname) {
 	player->food = 50;
 	player->credits = 1000;
 
-	player->planets_food = 1;
+	player->planets_food = 3;
 	player->planets_ore = 0;
 	player->planets_industrial = 0;
 	player->planets_military = 0;
@@ -2167,17 +2167,18 @@ void game_loop(player_t *player)
 			if (player->command_ship == 100) {
 				od_printf(" (5) Command Ship Components N/A    %6u%%    `bright green`complete`white`\r\n", player->command_ship);
 			} else {
-				od_printf(" (5) Command Ship Components %8u %6u%%    %5u%%\r\n", 10000 * (player->command_ship + 1), player->command_ship, (player->credits >= 10000 * (player->command_ship + 1) ? 1 : 0 ));
+				od_printf(" (5) Command Ship Components %8u %6u%%    %s\r\n", 10000 * (player->command_ship + 1), player->command_ship, (player->credits >= 10000 * (player->command_ship + 1) ? "`bright green`yes`white`" : "`bright red`no`white`" ));
 			}
 			od_printf(" (6) Colonize Planets ........2000    %6u     %6u\r\n", player->planets_ore + player->planets_food + player->planets_industrial + player->planets_military + player->planets_urban, player->credits / 2000);
 			od_printf(" (7) Food .....................100    %6u     %6u\r\n", player->food, player->credits / 100);
 			od_printf(" (8) Spies ...................5000    %6u     %6u\r\n", player->spies, player->credits / 5000);
-			od_printf(" (9) Visit the Bank\r\n");
+			od_printf("\r\n (9) Visit the Bank\r\n");
+			od_printf(" (0) Disband Armies\r\n");
 			od_printf("\r\n");
 			od_printf(" (`bright green`D`white`) Done\r\n");
 			od_printf("`bright green`============================================================`white`\r\n");
 
-			c = od_get_answer("123456789dD\r");
+			c = od_get_answer("1234567890dD\r");
 			switch (c) {
 				case '1':
 					od_printf("How many troops do you want to buy? (MAX `bright yellow`%u`white`) ", player->credits / 100);
@@ -2365,6 +2366,53 @@ void game_loop(player_t *player)
 									bank_done = 1;
 									break;
 							}
+						}
+					}
+					break;
+				case '0':
+					od_printf("\r\n\r\n`bright red`Warning: `bright white`You gain no compensation for disbanding armies.`white`\r\n\r\n");
+					if (player->troops > 0) {
+						od_printf("Disband how many troops? (`bright green`0`white` - %d) ", player->troops);
+						od_input_str(buffer, 10, '0', '9');
+						if (strlen(buffer) != 0) {
+							i = atoi(buffer);
+							if (i > player->troops) {
+								i = player->troops;
+							}
+							player->troops -= i;
+						}
+					}
+					if (player->generals > 0) {
+						od_printf("Disband how many generals? (`bright green`0`white` - %d) ", player->generals);
+						od_input_str(buffer, 10, '0', '9');
+						if (strlen(buffer) != 0) {
+							i = atoi(buffer);
+							if (i > player->generals) {
+								i = player->generals;
+							}
+							player->generals -= i;
+						}
+					}	
+					if (player->fighters > 0) {
+						od_printf("Disband how many fighters? (`bright green`0`white` - %d) ", player->fighters);
+						od_input_str(buffer, 10, '0', '9');
+						if (strlen(buffer) != 0) {
+							i = atoi(buffer);
+							if (i > player->fighters) {
+								i = player->fighters;
+							}
+							player->fighters -= i;
+						}
+					}
+					if (player->defence_stations > 0) {
+						od_printf("Disband how many defence stations? (`bright green`0`white` - %d) ", player->defence_stations);
+						od_input_str(buffer, 10, '0', '9');
+						if (strlen(buffer) != 0) {
+							i = atoi(buffer);
+							if (i > player->defence_stations) {
+								i = player->defence_stations;
+							}
+							player->defence_stations -= i;
 						}
 					}
 					break;
@@ -2586,9 +2634,9 @@ void game_loop(player_t *player)
 		// Productions
 
 		if (player->planets_food > 0) {
-			od_printf("Your food planets produced %u food.\r\n", 50 * player->planets_food);
+			od_printf("Your food planets produced %u food.\r\n", 10 * player->planets_food);
 
-			player->food += 50 * player->planets_food;
+			player->food += 10 * player->planets_food;
 		}
 
 		if (player->planets_military > 0) {
@@ -3024,11 +3072,11 @@ int main(int argc, char **argv)
 			if (days_passed > 0) {
 				od_printf("\r\n\r\nIt's been %d days since you last played!\r\n", days_passed);
 				if (gPlayer->bank_balance > 0) {
-					od_printf("You've earned %d credits in interest on your bank balance!\r\n", gPlayer->bank_balance * 0.10 * days_passed);
-					gPlayer->bank_balance += gPlayer->bank_balance * 0.10 * days_passed;
+					od_printf("You've earned %d credits in interest on your bank balance!\r\n", (int)((float)gPlayer->bank_balance * 0.0001f * (float)days_passed));
+					gPlayer->bank_balance +=  (int)((float)gPlayer->bank_balance * 0.0001f * (float)days_passed);
 				} if (gPlayer->bank_balance < 0) {
-					od_printf("You've been charged %d credits in interest on your bank balance!\r\n", gPlayer->bank_balance * 5 * days_passed);
-					gPlayer->bank_balance += gPlayer->bank_balance * 5 * days_passed;
+					od_printf("You've been charged %d credits in interest on your bank balance!\r\n", (int)((float)gPlayer->bank_balance * 0.05f * (float)days_passed));
+					gPlayer->bank_balance += (int)((float)gPlayer->bank_balance * 0.05f * (float)days_passed);
 				}
 			}
 			game_loop(gPlayer);
