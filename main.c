@@ -1335,6 +1335,11 @@ int do_interbbs_battle(char *victim, char *attacker, int from, uint32_t troops, 
 	char bbs_name[40];
 	char message[256];
 	int i;
+	int dtroops;
+	int dgenerals;
+	int dfighters;
+	int difference;
+	
 	player_t *victim_player = load_player_gn(victim);
 	if (victim_player == NULL) {
 		return -1;
@@ -1405,6 +1410,34 @@ int do_interbbs_battle(char *victim, char *attacker, int from, uint32_t troops, 
 			msg->plunder_food = plunder_food;
 		}
 
+		difference = rand() % 5 + 1;
+		dtroops = (int)troops - (int)((float)troops * ((float)difference / 100.f));
+		dgenerals = (int)generals - (int)((float)generals * ((float)difference / 100.f));
+		dfighters = (int)fighters - (int)((float)fighters * ((float)difference / 100.f));
+		
+		if (dtroops > victim_player->troops) dtroops = victim_player->troops;
+		if (dgenerals > victim_player->generals) dgenerals = victim_player->generals;
+		if (dfighters > victim_player->defence_stations) dfighters = victim_player->defence_stations;			
+		
+		enemy_troops = dtroops;
+		enemy_generals = dgenerals;
+		enemy_defence_stations = dfighters;
+		
+		
+		dtroops = (int)troops - ((int)victim_player->troops - (int)((float)victim_player->troops * ((float)difference / 100.f)));
+		dgenerals = (int)generals - ((int)victim_player->generals - (int)((float)victim_player->generals * ((float)difference / 100.f)));
+		dfighters = (int)fighters - ((int)victim_player->fighters - (int)((float)victim_player->defence_stations * ((float)difference / 100.f)));
+
+		
+		if (dtroops < 0) dtroops = 0;
+		if (dgenerals < 0) dgenerals = 0;
+		if (dfighters < 0) dfighters = 0;
+		
+		msg->troops = dtroops;
+		msg->generals = dgenerals;
+		msg->fighters = dfighters;
+				
+/*
 		msg->troops = troops * victory_chance;
 		msg->generals = generals * victory_chance;
 		msg->fighters = fighters * victory_chance;
@@ -1412,7 +1445,7 @@ int do_interbbs_battle(char *victim, char *attacker, int from, uint32_t troops, 
 		enemy_troops = (uint32_t)((float)victim_player->troops * (1.f - (float)victory_chance));
 		enemy_generals = (uint32_t)((float)victim_player->generals * (1.f - (float)victory_chance));
 		enemy_defence_stations = (uint32_t)((float)victim_player->defence_stations * (1.f - (float)victory_chance));
-
+*/
 
 		snprintf(message, 256, "%s from %s attacked you and won, you lost %u citizens, %u credits, %u food, %u troops, %u generals, %u defence stations.", attacker, bbs_name,
 			plunder_people, plunder_credits, plunder_food, enemy_troops, enemy_generals, enemy_defence_stations);
@@ -1423,13 +1456,33 @@ int do_interbbs_battle(char *victim, char *attacker, int from, uint32_t troops, 
 		msg->score = 1;
 	} else {
 		// defeat
-		msg->troops = troops * victory_chance;
-		msg->generals = generals * victory_chance;
-		msg->fighters = fighters * victory_chance;
+		difference = rand() % 5 + 1;
+		dtroops = (int)troops - (int)((float)troops * ((float)difference / 100.f));
+		dgenerals = (int)generals - (int)((float)generals * ((float)difference / 100.f));
+		dfighters = (int)fighters - (int)((float)fighters * ((float)difference / 100.f));
+		
+		if (dtroops > victim_player->troops) dtroops = victim_player->troops;
+		if (dgenerals > victim_player->generals) dgenerals = victim_player->generals;
+		if (dfighters > victim_player->defence_stations) dfighters = victim_player->defence_stations;		
+		
+		enemy_troops = dtroops;
+		enemy_generals = dgenerals;
+		enemy_defence_stations = dfighters;
+		
+		
+		dtroops = (int)troops - ((int)victim_player->troops - (int)((float)victim_player->troops * ((float)difference / 100.f)));
+		dgenerals = (int)generals - ((int)victim_player->generals - (int)((float)victim_player->generals * ((float)difference / 100.f)));
+		dfighters = (int)fighters - ((int)victim_player->fighters - (int)((float)victim_player->defence_stations * ((float)difference / 100.f)));
+		
 
-		enemy_troops = (uint32_t)((float)victim_player->troops * (1.f - (float)victory_chance));
-		enemy_generals = (uint32_t)((float)victim_player->generals * (1.f - (float)victory_chance));
-		enemy_defence_stations = (uint32_t)((float)victim_player->defence_stations * (1.f - (float)victory_chance));
+		
+		if (dtroops < 0) dtroops = 0;
+		if (dgenerals < 0) dgenerals = 0;
+		if (dfighters < 0) dfighters = 0;
+		
+		msg->troops = dtroops;
+		msg->generals = dgenerals;
+		msg->fighters = dfighters;
 
 		snprintf(message, 256, "%s from %s attacked you and lost, %u troops, %u generals, %u defence stations were destroyed in the attack.", attacker, bbs_name, enemy_troops, enemy_generals, enemy_defence_stations);
 		victim_player->troops -= enemy_troops;
@@ -1461,7 +1514,8 @@ void do_battle(player_t *victim, player_t *attacker, int troops, int generals, i
 	uint32_t defence;
 
 	int battle;
-
+	int difference;
+	
 	uint32_t plunder_people;
 	uint32_t plunder_credits;
 	uint32_t plunder_food;
@@ -1473,6 +1527,9 @@ void do_battle(player_t *victim, player_t *attacker, int troops, int generals, i
 	uint32_t enemy_troops;
 	uint32_t enemy_generals;
 	uint32_t enemy_defence_stations;
+	int dtroops;
+	int dgenerals;
+	int dfighters;
 	float victory_chance;
 
 	// attack soldiers
@@ -1536,11 +1593,41 @@ void do_battle(player_t *victim, player_t *attacker, int troops, int generals, i
 			attacker->planets_military += plunder_planet_military;
 			od_printf("   - %u soldier planets\r\n", plunder_planet_military);
 		}
-
+		
+		difference = rand() % 5 + 1;
+		dtroops = (int)troops - (int)((float)troops * ((float)difference / 100.f));
+		dgenerals = (int)generals - (int)((float)generals * ((float)difference / 100.f));
+		dfighters = (int)fighters - (int)((float)fighters * ((float)difference / 100.f));
+		
+		if (dtroops > victim->troops) dtroops = victim->troops;
+		if (dgenerals > victim->generals) dgenerals = victim->generals;
+		if (dfighters > victim->defence_stations) dfighters = victim->defence_stations;		
+		
+		enemy_troops = dtroops;
+		enemy_generals = dgenerals;
+		enemy_defence_stations = dfighters;
+		
+		
+		dtroops = (int)troops - ((int)victim->troops - (int)((float)victim->troops * ((float)difference / 100.f)));
+		dgenerals = (int)generals - ((int)victim->generals - (int)((float)victim->generals * ((float)difference / 100.f)));
+		dfighters = (int)fighters - ((int)victim->fighters - (int)((float)victim->defence_stations * ((float)difference / 100.f)));
+		
+		if (dtroops < 0) dtroops = 0;
+		if (dgenerals < 0) dgenerals = 0;
+		if (dfighters < 0) dfighters = 0;
+		
+		troops = dtroops;
+		generals = dgenerals;
+		fighters = dfighters;
+		
+		
+/*
 		if (victory_chance > 0.75) {
 			victory_chance = 0.75;
 		}
-
+		
+		
+		
 		troops = troops * victory_chance;
 		generals = generals * victory_chance;
 		fighters = fighters * victory_chance;
@@ -1548,12 +1635,39 @@ void do_battle(player_t *victim, player_t *attacker, int troops, int generals, i
 		enemy_troops = victim->troops * victory_chance;
 		enemy_generals = victim->generals * victory_chance;
 		enemy_defence_stations = victim->defence_stations * victory_chance;
-
+*/
 		snprintf(message, 256, "%s attacked you and won, you lost %u citizens, %u credits, %u food, %u planets (%u ore, %u industrial, %u soldier, %u food), %u troops, %u generals, %u defence stations.", attacker->gamename,
 			plunder_people, plunder_credits, plunder_food, plunder_planet_food + plunder_planet_military + plunder_planet_industrial + plunder_planet_ore, plunder_planet_ore, plunder_planet_industrial
 			, plunder_planet_military, plunder_planet_food,  victim->troops - enemy_troops, victim->generals - enemy_generals, victim->defence_stations - enemy_defence_stations);
 	} else {
 		// defeat
+		
+		difference = rand() % 5 +1;
+		dtroops = (int)troops - (int)((float)troops * ((float)difference / 100.f));
+		dgenerals = (int)generals - (int)((float)generals * ((float)difference / 100.f));
+		dfighters = (int)fighters - (int)((float)fighters * ((float)difference / 100.f));
+		
+		if (dtroops > victim->troops) dtroops = victim->troops;
+		if (dgenerals > victim->generals) dgenerals = victim->generals;
+		if (dfighters > victim->defence_stations) dfighters = victim->defence_stations;		
+		
+		enemy_troops = dtroops;
+		enemy_generals = dgenerals;
+		enemy_defence_stations = dfighters;
+		
+		dtroops = (int)troops - ((int)victim->troops - (int)((float)victim->troops * ((float)difference / 100.f)));
+		dgenerals = (int)generals - ((int)victim->generals - (int)((float)victim->generals * ((float)difference / 100.f)));
+		dfighters = (int)fighters - ((int)victim->fighters - (int)((float)victim->defence_stations * ((float)difference / 100.f)));
+	
+		
+		if (dtroops < 0) dtroops = 0;
+		if (dgenerals < 0) dgenerals = 0;
+		if (dfighters < 0) dfighters = 0;
+		
+		troops = dtroops;
+		generals = dgenerals;
+		fighters = dfighters;
+/*
 		if (victory_chance > 0.75) {
 			victory_chance = 0.75;
 		}
@@ -1565,8 +1679,7 @@ void do_battle(player_t *victim, player_t *attacker, int troops, int generals, i
 		enemy_troops = victim->troops * victory_chance;
 		enemy_generals = victim->generals * victory_chance;
 		enemy_defence_stations = victim->defence_stations * victory_chance;
-
-
+*/
 		od_printf("`white`You are `bright red`defeated`white`.\r\n");
 		snprintf(message, 256, "%s attacked you and lost, %u troops, %u generals, %u defence stations were destroyed in the attack", attacker->gamename, victim->troops - enemy_troops, victim->generals - enemy_generals, victim->defence_stations - enemy_defence_stations);
 
@@ -1575,7 +1688,7 @@ void do_battle(player_t *victim, player_t *attacker, int troops, int generals, i
 	send_message(victim, NULL, message);
 
 	od_printf(" %u troops, %u generals and %u fighters return home.\r\n", troops, generals, fighters);
-	od_printf(" %u enemy troops, %u enemy generals and %u enemy defence stations were destroyed\r\n", victim->troops - enemy_troops, victim->generals - enemy_generals, victim->defence_stations - enemy_defence_stations);
+	od_printf(" %u enemy troops, %u enemy generals and %u enemy defence stations were destroyed\r\n", enemy_troops, enemy_generals, enemy_defence_stations);
 
 	od_printf("\r\nPress a key to continue\r\n");
 	od_get_key(TRUE);
@@ -1584,9 +1697,9 @@ void do_battle(player_t *victim, player_t *attacker, int troops, int generals, i
 	attacker->generals += generals;
 	attacker->fighters += fighters;
 
-	victim->troops = enemy_troops;
-	victim->generals = enemy_generals;
-	victim->defence_stations = enemy_defence_stations;
+	victim->troops -= enemy_troops;
+	victim->generals -= enemy_generals;
+	victim->defence_stations -= enemy_defence_stations;
 
 }
 
