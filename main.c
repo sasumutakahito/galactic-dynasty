@@ -2318,15 +2318,15 @@ void game_loop(player_t *player)
 						while (!bank_done) {
 							if (player->bank_balance >= 0) {
 #ifdef MSC_VER
-								od_printf("Your current bank balance is `bright green`%I64d `white`credits. Interest is %g%% per day.\r\n", player->bank_balance, (player->bank_balance > 0 ? 0.10f : 5.f));
+								od_printf("Your current bank balance is `bright green`%I64d `white`credits. Interest is %.1f%% per day.\r\n", player->bank_balance, (player->bank_balance > 0 ? 0.10f : 5.f));
 #else								
-								od_printf("Your current bank balance is `bright green`%lld `white`credits. Interest is %g%% per day.\r\n", player->bank_balance, (player->bank_balance > 0 ? 0.10f : 5.f));
+								od_printf("Your current bank balance is `bright green`%lld `white`credits. Interest is %.1f%% per day.\r\n", player->bank_balance, (player->bank_balance > 0 ? 0.10f : 5.f));
 #endif
 							} else {
 #ifdef MSC_VER
-								od_printf("Your current bank balance is `bright red`%I64d `white`credits. Interest is %g%% per day.\r\n", player->bank_balance, (player->bank_balance > 0 ? 0.10f : 5.f));
+								od_printf("Your current bank balance is `bright red`%I64d `white`credits. Interest is %.1f%% per day.\r\n", player->bank_balance, (player->bank_balance > 0 ? 0.10f : 5.f));
 #else
-								od_printf("Your current bank balance is `bright red`%lld `white`credits. Interest is %g%% per day.\r\n", player->bank_balance, (player->bank_balance > 0 ? 0.10f : 5.f));
+								od_printf("Your current bank balance is `bright red`%lld `white`credits. Interest is %.1f%% per day.\r\n", player->bank_balance, (player->bank_balance > 0 ? 0.10f : 5.f));
 #endif
 							}
 							od_printf("Your current allowed overdraft is %u credits.\r\n", calculate_score(player) / 2);
