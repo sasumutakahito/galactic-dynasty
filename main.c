@@ -3193,6 +3193,7 @@ int main(int argc, char **argv)
 				}
 			}
 			game_loop(gPlayer);
+			days_passed = 0;
 			break;
 		case '2':
 			unseen_msgs(gPlayer);
