@@ -1,0 +1,56 @@
+Galactic Dynasty
+by Andrew Pamment
+
+Installation for Mystic BBS v1.12 A35
+
+Installation instructions for Galactic Dynasty under Linux
+Tested and currently running under Ubuntu 16.04LTS
+
+INSTALLATION:
+
+Unpack into ~/doors/gdyn/
+(or directory of your choice)
+
+run ./mystic -cfg
+
+Mystic v 1.12 A35
+-----------------
+
+Display Text	: (G)alactic Dynasty
+Lightbar Low	: (G)alactic Dynasty
+Lightbar High	: (G)alactic Dynasty
+Hot Key			: G
+Access			:
+Display Type	: Access
+X Y				: 0   0
+Timer			: 0
+Timer Type		: Interval             Redraw  : Yes
+Command--------------------Access----Data---------------------------------------------
+(DD) Exec external program           ~/doors/gdyn/gdyn.sh %PDORINFO1.DEF %3
+
+
+gdyn.sh
+#!/bin/bash
+cd ~/doors/gdyn/
+./GalacticDynasty -D $1 -N $2
+./GalacticDynasty maintenance
+
+The last line is only needed if running the game interbbs. This is the process needed
+to run the inbound and outbound processing for game packets. If your game is only a 
+local run, this line can be omitted.
+
+I have found that having the script file located in the GalacticDynasty directory is 
+the easiest way to run it. I had issues with trying to locate the file in other
+locations.
+
+Please note the case of both the commands in the script file, and the data field within
+Mystic. Linux is case sensitive, and if the case is not correct, it will not work.
+Trust me. :)
+
+Dan Richter
+aka Black Panther
+Sysop - Castle Rock BBS
+telnet://castlerockbbs.com
+The sparrows are flying again...
+
+

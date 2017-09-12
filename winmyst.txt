@@ -1,0 +1,41 @@
+Galactic Dynasty
+by Andrew Pamment
+
+Installation for Mystic BBS v1.12 A35
+
+Compatible with Windows (tm) 2000, XP, Vista and Windows 7 - 10
+
+INSTALLATION:
+
+Unpack into c:\bbs\doors\gdyn\ 
+(or directory of your choice)
+
+run MYSTIC -CFG
+
+Mystic v 1.12 A35
+-----------------
+
+Display Text	: (G)alactic Dynasty
+Lightbar Low	: (G)alactic Dynasty
+Lightbar High	: (G)alactic Dynasty
+Hot Key			: G
+Access			:
+Display Type	: Access
+X Y				: 0   0
+Timer			: 0
+Timer Type		: Interval             Redraw  : Yes
+Command--------------------Access----Data---------------------------------------------
+(D3) Exec DOOR32 program             c:\bbs\doors\gdyn\start.bat %P\door32.sys %3 %0
+
+
+START.BAT
+c:
+cd \bbs\doors\gdyn\
+galacticdynasty.exe -D %1 -N %2 -SOCKET %3
+
+Dan Richter
+aka Black Panther
+Sysop - Castle Rock BBS
+telnet://castlerockbbs.com
+The sparrows are flying again...
+
