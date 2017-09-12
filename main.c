@@ -3185,10 +3185,10 @@ int main(int argc, char **argv)
 			if (days_passed > 0) {
 				od_printf("\r\n\r\nIt's been %d days since you last played!\r\n", days_passed);
 				if (gPlayer->bank_balance > 0) {
-					od_printf("You've earned %d credits in interest on your bank balance!\r\n", (int)((float)gPlayer->bank_balance * 0.0001f * (float)days_passed));
-					gPlayer->bank_balance +=  (int)((float)gPlayer->bank_balance * 0.0001f * (float)days_passed);
+					od_printf("You've earned %d credits in interest on your bank balance!\r\n", (int)((float)gPlayer->bank_balance * 0.001f * (float)days_passed));
+					gPlayer->bank_balance +=  (int)((float)gPlayer->bank_balance * 0.001f * (float)days_passed);
 				} if (gPlayer->bank_balance < 0) {
-					od_printf("You've been charged %d credits in interest on your bank balance!\r\n", (int)((float)gPlayer->bank_balance * 0.05f * (float)days_passed));
+					od_printf("You've been charged %d credits in interest on your bank balance!\r\n", abs((int)((float)gPlayer->bank_balance * 0.05f * (float)days_passed)));
 					gPlayer->bank_balance += (int)((float)gPlayer->bank_balance * 0.05f * (float)days_passed);
 				}
 			}
