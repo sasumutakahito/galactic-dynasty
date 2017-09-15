@@ -136,7 +136,7 @@ void msg2he(ibbsmsg_t *msg) {
 	msg->game_id = ntohl(msg->game_id);
 }
 
-void log(char *fmt, ...) {
+void dolog(char *fmt, ...) {
 	char buffer[512];
 	struct tm *time_now;
 	time_t timen;
@@ -1359,7 +1359,7 @@ int do_interbbs_battle(char *victim, char *attacker, int from, uint32_t troops, 
 	}
 
 	if (strlen(bbs_name) == 0) {
-		log("InterBBS Battle: Empire name mismatch");
+		dolog("InterBBS Battle: Empire name mismatch");
 		return -1;
 	}
 
@@ -1495,7 +1495,7 @@ int do_interbbs_battle(char *victim, char *attacker, int from, uint32_t troops, 
 		msg->score = 0;
 	}
 
-	log("InterBBS Battle: Attack %u, Defence %u, Victory Chance %f, Battle %d", attack, defence, victory_chance, battle);
+	dolog("InterBBS Battle: Attack %u, Defence %u, Victory Chance %f, Battle %d", attack, defence, victory_chance, battle);
 
 	send_message(victim_player, NULL, message);
 
@@ -1734,10 +1734,10 @@ void perform_maintenance()
 	timenow = time(NULL);
 	int reset = 0;
 
-	log("Performing maintenance...");
+	dolog("Performing maintenance...");
 
 	fptr = fopen("lastrun.dat", "rb");
-
+/*
 	if (fptr) {
 		fread(&lastrun, sizeof(time_t), 1, fptr);
 		fclose(fptr);
@@ -1755,7 +1755,7 @@ void perform_maintenance()
 		fwrite(&timenow, sizeof(time_t), 1, fptr);		
 		fclose(fptr);
 	}
-
+*/
 	// parse all incoming messages
 	i = 0;
     k = 0;
@@ -1801,10 +1801,10 @@ void perform_maintenance()
 			case 1:
 				// add score to database
 				if (game_id != msg.game_id) {
-					log("Got packet for incorrect game id, skipping");
+					dolog("Got packet for incorrect game id, skipping");
 					break;
 				}
-				log("Got score file packet for player %s", msg.player_name);
+				dolog("Got score file packet for player %s", msg.player_name);
 				rc = sqlite3_open("interbbs.db3", &db);
 				if (rc) {
 					// Error opening the database
@@ -1849,10 +1849,10 @@ void perform_maintenance()
 				break;
 			case 2:
 				if (game_id != msg.game_id) {
-					log("Got packet for incorrect game id, skipping");
+					dolog("Got packet for incorrect game id, skipping");
 					break;
 				}			
-				log("Got invasion packet for: %s from: %s", msg.victim_name, msg.player_name);
+				dolog("Got invasion packet for: %s from: %s", msg.victim_name, msg.player_name);
 				// perform invasion
 				if (do_interbbs_battle(msg.victim_name, msg.player_name, msg.from, msg.troops, msg.generals, msg.fighters, &outboundmsg) == 0) {
 					outboundmsg.turns_in_protection = turns_in_protection;
@@ -1861,16 +1861,16 @@ void perform_maintenance()
 					msg2ne(&outboundmsg);
 					IBSend(&InterBBSInfo, msg.from, &outboundmsg, sizeof(ibbsmsg_t));
 				} else {
-					log("Invasion failed");
+					dolog("Invasion failed");
 				}
 				break;
 			case 3:
 				if (game_id != msg.game_id) {
-					log("Got packet for incorrect game id, skipping");
+					dolog("Got packet for incorrect game id, skipping");
 					break;
 				}			
 				// return troops
-				log("Got return troops packet for: %s", msg.player_name);
+				dolog("Got return troops packet for: %s", msg.player_name);
 				player = load_player_gn(msg.player_name);
 				if (player != NULL) {
 					player->troops += msg.troops;
@@ -1894,13 +1894,13 @@ void perform_maintenance()
 					save_player(player);
 					free(player);
 				} else {
-					log("return troops failed");
+					dolog("return troops failed");
 				}
 				break;
 			case 4:
 				// message
 				if (game_id != msg.game_id) {
-					log("Got packet for incorrect game id, skipping");
+					dolog("Got packet for incorrect game id, skipping");
 					break;
 				}				
 				rc = sqlite3_open("interbbs.db3", &db);
@@ -1928,7 +1928,7 @@ void perform_maintenance()
 			case 5:
 				// new node
 				if (game_id != msg.game_id) {
-					log("Got packet for incorrect game id, skipping");
+					dolog("Got packet for incorrect game id, skipping");
 					break;
 				}				
 				if (msg.from != 1) {
@@ -2028,7 +2028,7 @@ void perform_maintenance()
 			
 			fptr = fopen("game_id.dat", "wb");
 			if (!fptr) {
-				log("Could not open game_id.dat for writing!!\n");
+				dolog("Could not open game_id.dat for writing!!\n");
 			} else {
 				fwrite(&game_id, sizeof(uint32_t), 1, fptr);
 				fclose(fptr);

@@ -22,7 +22,7 @@ char *apszKeyWord[NUM_KEYWORDS] = {"LinkNodeNumber",
                                    "LinkFileOutbox",
                                    "LinkName"};
 
-int packetno = 0;
+
 
 tIBResult ProcessFile(tIBInfo *pInfo, char *filename, void *pBuffer, int nBufferSize) {
     char version[6];
@@ -135,6 +135,20 @@ tIBResult IBSend(tIBInfo *pInfo, int pszDestNode, void *pBuffer, uint32_t nBuffe
     time_t now;
     struct tm *now_tm;
     int minutes;
+	int oldminutes;
+	int packetno = 0;
+	
+	fptr = fopen("ibbssync.dat", "rb");
+	if (!fptr) {
+		oldminutes = 0;
+	} else {
+		fread(&oldminutes, sizeof(int), 1, fptr);
+		
+		if (oldminutes == minutes) {
+			fread(&packetno, sizeof(int), 1, fptr);
+		}
+		fclose(fptr);
+	}
 
     for (i=0;i<pInfo->otherNodeCount;i++) {
         if (pInfo->otherNodes[i]->nodeNumber == pszDestNode) {
@@ -175,6 +189,13 @@ tIBResult IBSend(tIBInfo *pInfo, int pszDestNode, void *pBuffer, uint32_t nBuffe
     fwrite(pBuffer, nBufferSize, 1, fptr);
     fclose(fptr);
 
+	fptr = fopen("ibbssync.dat", "wb");
+	if (!fptr) {
+		fprintf(stderr, "Unable to open ibbssync.dat");
+	} else {
+		fwrite(&minutes, sizeof(int), 1, fptr);
+		fwrite(&packetno, sizeof(int), 1, fptr);
+	}
     return eSuccess;
 }
 
