@@ -3018,15 +3018,26 @@ int main(int argc, char **argv)
 		}		
 	}
 	if (strcasecmp(lpszCmdLine, "reset") == 0) {
+		game_id = rand() % 0xFFFFFFFE + 1;
+		fptr = fopen("game_id.dat", "wb");
+		if (!fptr) {
+			fprintf(stderr, "Failed to open game_id.dat\n");
+			return -1;
+		}
+		
+		fwrite(&game_id, sizeof(uint32_t), 1, fptr);
+		fclose(fptr);
+				
 		memset(&msg, 0, sizeof(ibbsmsg_t));
 		msg.type = 6;
 		msg.from = InterBBSInfo.myNode->nodeNumber;
 		msg.created = time(NULL);
 		msg.turns_per_day = turns_per_day;
 		msg.turns_in_protection = turns_in_protection;
-		msg.game_id = rand() % 0xFFFFFFFE + 1;
+		msg.game_id = game_id;
 		msg2ne(&msg);
 		IBSendAll(&InterBBSInfo, &msg, sizeof(ibbsmsg_t));	
+
 		return 0;		
 	}
 
@@ -3107,13 +3118,23 @@ int main(int argc, char **argv)
 	}
 
 	if (argc > 1 && strcasecmp(argv[1], "reset") == 0) {
+		game_id = rand() % 0xFFFFFFFE + 1;
+		fptr = fopen("game_id.dat", "wb");
+		if (!fptr) {
+			fprintf(stderr, "Failed to open game_id.dat\n");
+			return -1;
+		}
+		
+		fwrite(&game_id, sizeof(uint32_t), 1, fptr);
+		fclose(fptr);
+						
 		memset(&msg, 0, sizeof(ibbsmsg_t));
 		msg.type = 6;
 		msg.from = InterBBSInfo.myNode->nodeNumber;
 		msg.created = time(NULL);
 		msg.turns_per_day = turns_per_day;
 		msg.turns_in_protection = turns_in_protection;
-		msg.game_id = rand() % 0xFFFFFFFF;
+		msg.game_id = game_id;
 		msg2ne(&msg);
 		IBSendAll(&InterBBSInfo, &msg, sizeof(ibbsmsg_t));	
 		return 0;	
