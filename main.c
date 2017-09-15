@@ -31,6 +31,7 @@
 int turns_per_day;
 int turns_in_protection;
 int full;
+uint32_t game_id;
 
 tIBInfo InterBBSInfo;
 int interBBSMode;
@@ -94,6 +95,7 @@ typedef struct ibbsmsg {
 	uint32_t created;
 	uint32_t turns_per_day;
 	uint32_t turns_in_protection;
+	uint32_t game_id;
 } __attribute__((packed)) ibbsmsg_t;
 
 typedef struct ibbsscore {
@@ -115,6 +117,7 @@ void msg2ne(ibbsmsg_t *msg) {
 	msg->created = htonl(msg->created);
 	msg->turns_per_day = htonl(msg->turns_per_day);
 	msg->turns_in_protection = htonl(msg->turns_in_protection);
+	msg->game_id = htonl(msg->game_id);
 }
 
 void msg2he(ibbsmsg_t *msg) {
@@ -130,6 +133,7 @@ void msg2he(ibbsmsg_t *msg) {
 	msg->created = ntohl(msg->created);
 	msg->turns_per_day = ntohl(msg->turns_per_day);
 	msg->turns_in_protection = ntohl(msg->turns_in_protection);
+	msg->game_id = ntohl(msg->game_id);
 }
 
 void log(char *fmt, ...) {
@@ -1761,6 +1765,14 @@ void perform_maintenance()
 			
 	 	    if (result == eSuccess) {
 				msg2he(&msg);
+				if (game_id == 0) {
+					game_id = msg.game_id;
+					fptr = fopen("game_id.dat", "wb");
+					if (fptr) {
+						fwrite(&game_id, sizeof(uint32_t), 1, fptr);
+						fclose(fptr);
+					}
+				}
 				if ((msg.turns_in_protection != turns_in_protection || msg.turns_per_day != turns_per_day) && msg.from != 1) {
 					fprintf(stderr, "Settings mismatch. Ignoring packet\n");
 					continue;
@@ -1788,6 +1800,10 @@ void perform_maintenance()
 			switch(msg.type) {
 			case 1:
 				// add score to database
+				if (game_id != msg.game_id) {
+					log("Got packet for incorrect game id, skipping");
+					break;
+				}
 				log("Got score file packet for player %s", msg.player_name);
 				rc = sqlite3_open("interbbs.db3", &db);
 				if (rc) {
@@ -1832,11 +1848,16 @@ void perform_maintenance()
 
 				break;
 			case 2:
+				if (game_id != msg.game_id) {
+					log("Got packet for incorrect game id, skipping");
+					break;
+				}			
 				log("Got invasion packet for: %s from: %s", msg.victim_name, msg.player_name);
 				// perform invasion
 				if (do_interbbs_battle(msg.victim_name, msg.player_name, msg.from, msg.troops, msg.generals, msg.fighters, &outboundmsg) == 0) {
 					outboundmsg.turns_in_protection = turns_in_protection;
 					outboundmsg.turns_per_day = turns_per_day;
+					msg.game_id = game_id;	
 					msg2ne(&outboundmsg);
 					IBSend(&InterBBSInfo, msg.from, &outboundmsg, sizeof(ibbsmsg_t));
 				} else {
@@ -1844,6 +1865,10 @@ void perform_maintenance()
 				}
 				break;
 			case 3:
+				if (game_id != msg.game_id) {
+					log("Got packet for incorrect game id, skipping");
+					break;
+				}			
 				// return troops
 				log("Got return troops packet for: %s", msg.player_name);
 				player = load_player_gn(msg.player_name);
@@ -1874,6 +1899,10 @@ void perform_maintenance()
 				break;
 			case 4:
 				// message
+				if (game_id != msg.game_id) {
+					log("Got packet for incorrect game id, skipping");
+					break;
+				}				
 				rc = sqlite3_open("interbbs.db3", &db);
 				if (rc) {
 					// Error opening the database
@@ -1898,6 +1927,10 @@ void perform_maintenance()
 				break;
 			case 5:
 				// new node
+				if (game_id != msg.game_id) {
+					log("Got packet for incorrect game id, skipping");
+					break;
+				}				
 				if (msg.from != 1) {
 					fprintf(stderr, "Received ADD/REMOVE from system not Node 1\n");
 					break;
@@ -1966,10 +1999,11 @@ void perform_maintenance()
 			case 6:
 				if (msg.from == 1) {
 					reset = 1;
+					game_id = msg.game_id;
 				} else {
 					fprintf(stderr, "Got reset message from someone not node 1, ignoring\n");
 				}
-				break;
+				break;			
 			default:
 				fprintf(stderr, "Unknown message type: %d\n", msg.type);
 				break;
@@ -1990,6 +2024,14 @@ void perform_maintenance()
 #endif				
 			if(unlink("inuse.flg") != 0) {
 				perror("unlink ");
+			}
+			
+			fptr = fopen("game_id.dat", "wb");
+			if (!fptr) {
+				log("Could not open game_id.dat for writing!!\n");
+			} else {
+				fwrite(&game_id, sizeof(uint32_t), 1, fptr);
+				fclose(fptr);
 			}
 			exit(0);
 		}
@@ -2039,7 +2081,8 @@ void perform_maintenance()
 					player->last_score = calculate_score(player);
 					save_player(player);
 					msg.turns_in_protection = turns_in_protection;
-					msg.turns_per_day = turns_per_day;					
+					msg.turns_per_day = turns_per_day;
+					msg.game_id = game_id;				
 					msg2ne(&msg);
 					IBSendAll(&InterBBSInfo, &msg, sizeof(ibbsmsg_t));
 				}
@@ -2197,6 +2240,7 @@ void game_loop(player_t *player)
 								msg.created = time(NULL);
 								msg.turns_in_protection = turns_in_protection;
 								msg.turns_per_day = turns_per_day;
+								msg.game_id = game_id;	
 								msg2ne(&msg);
 								if (IBSend(&InterBBSInfo, addr, &msg, sizeof(ibbsmsg_t)) != eSuccess) {
 									od_printf("\r\nMessage failed to send.\r\n");
@@ -2273,18 +2317,18 @@ void game_loop(player_t *player)
 			od_printf("`bright green`============================================================\r\n");
 			od_printf("`white` Buy Stuff                 Your funds: %u credits\r\n", player->credits);
 			od_printf("`bright green`============================`green`[`white`Price`green`]`bright green`=`green`[`white`You Have`green`]`bright green`=`green`[`white`Can Afford`green`]`bright green`=\r\n");
-			od_printf("`white` (1) Troops ...................100    %6u     %6u\r\n", player->troops, player->credits / 100);
-			od_printf(" (2) Generals .................500    %6u     %6u\r\n", player->generals, player->credits / 500);
-			od_printf(" (3) Fighters ................1000    %6u     %6u\r\n", player->fighters, player->credits / 1000);
-			od_printf(" (4) Defence Stations ........1000    %6u     %6u\r\n", player->defence_stations, player->credits / 1000);
+			od_printf("`white` (1) Troops                    100    %6u     %6u\r\n", player->troops, player->credits / 100);
+			od_printf(" (2) Generals                  500    %6u     %6u\r\n", player->generals, player->credits / 500);
+			od_printf(" (3) Fighters                 1000    %6u     %6u\r\n", player->fighters, player->credits / 1000);
+			od_printf(" (4) Defence Stations         1000    %6u     %6u\r\n", player->defence_stations, player->credits / 1000);
 			if (player->command_ship == 100) {
-				od_printf(" (5) Command Ship Components N/A    %6u%%    `bright green`complete`white`\r\n", player->command_ship);
+				od_printf(" (5) Command Ship              N/A    %6u%%  `bright green`complete`white`\r\n", player->command_ship);
 			} else {
-				od_printf(" (5) Command Ship Components %8u %6u%%    %s\r\n", 10000 * (player->command_ship + 1), player->command_ship, (player->credits >= 10000 * (player->command_ship + 1) ? "`bright green`yes`white`" : "`bright red`no`white`" ));
+				od_printf(" (5) Command Ship %16u    %6u%%       %4s\r\n", 10000 * (player->command_ship + 1), player->command_ship, (player->credits >= 10000 * (player->command_ship + 1) ? "`bright green`yes`white`" : "`bright red` no`white`" ));
 			}
-			od_printf(" (6) Colonize Planets ........2000    %6u     %6u\r\n", player->planets_ore + player->planets_food + player->planets_industrial + player->planets_military + player->planets_urban, player->credits / 2000);
-			od_printf(" (7) Food .....................100    %6u     %6u\r\n", player->food, player->credits / 100);
-			od_printf(" (8) Spies ...................5000    %6u     %6u\r\n", player->spies, player->credits / 5000);
+			od_printf(" (6) Colonize Planets         2000    %6u     %6u\r\n", player->planets_ore + player->planets_food + player->planets_industrial + player->planets_military + player->planets_urban, player->credits / 2000);
+			od_printf(" (7) Food                      100    %6u     %6u\r\n", player->food, player->credits / 100);
+			od_printf(" (8) Spies                    5000    %6u     %6u\r\n", player->spies, player->credits / 5000);
 			od_printf("\r\n (9) Visit the Bank\r\n");
 			od_printf(" (0) Disband Armies\r\n");
 			od_printf("\r\n");
@@ -2729,6 +2773,7 @@ void game_loop(player_t *player)
 								// send message
 								msg.turns_in_protection = turns_in_protection;
 								msg.turns_per_day = turns_per_day;
+								msg.game_id = game_id;									
 								msg2ne(&msg);
 								if (IBSend(&InterBBSInfo, addr, &msg, sizeof(ibbsmsg_t)) != eSuccess) {
 									player->troops += msg.troops;
@@ -2943,6 +2988,13 @@ int main(int argc, char **argv)
 		if (IBReadConfig(&InterBBSInfo, "BBS.CFG")!= eSuccess) {
 			interBBSMode = 0;
 		}
+		fptr = fopen("game_id.dat", "rb");
+		if (!fptr) {
+			game_id = 0;
+		} else {
+			fread(&game_id, sizeof(uint32_t), 1, fptr);
+			fclose(fptr);
+		}
 	}
 
 	if (stat("inuse.flg", &s) == 0) {
@@ -2972,6 +3024,7 @@ int main(int argc, char **argv)
 		msg.created = time(NULL);
 		msg.turns_per_day = turns_per_day;
 		msg.turns_in_protection = turns_in_protection;
+		msg.game_id = rand() % 0xFFFFFFFE + 1;
 		msg2ne(&msg);
 		IBSendAll(&InterBBSInfo, &msg, sizeof(ibbsmsg_t));	
 		return 0;		
@@ -3002,7 +3055,7 @@ int main(int argc, char **argv)
 			msg.created = time(NULL);
 			msg.turns_per_day = turns_per_day;
 			msg.turns_in_protection = turns_in_protection;
-
+			msg.game_id = game_id;	
 			msg2ne(&msg);
 			IBSendAll(&InterBBSInfo, &msg, sizeof(ibbsmsg_t));
 		}
@@ -3022,7 +3075,7 @@ int main(int argc, char **argv)
 			msg.created = time(NULL);
 			msg.turns_per_day = turns_per_day;
 			msg.turns_in_protection = turns_in_protection;
-
+			msg.game_id = game_id;	
 			msg2ne(&msg);
 			IBSendAll(&InterBBSInfo, &msg, sizeof(ibbsmsg_t));
 		}
@@ -3060,6 +3113,7 @@ int main(int argc, char **argv)
 		msg.created = time(NULL);
 		msg.turns_per_day = turns_per_day;
 		msg.turns_in_protection = turns_in_protection;
+		msg.game_id = rand() % 0xFFFFFFFF;
 		msg2ne(&msg);
 		IBSendAll(&InterBBSInfo, &msg, sizeof(ibbsmsg_t));	
 		return 0;	
@@ -3076,7 +3130,7 @@ int main(int argc, char **argv)
 			msg.created = time(NULL);
 			msg.turns_per_day = turns_per_day;
 			msg.turns_in_protection = turns_in_protection;
-
+			msg.game_id = game_id;	
 			msg2ne(&msg);
 
 			printf("sending to all\n");
@@ -3094,7 +3148,7 @@ int main(int argc, char **argv)
 			msg.created = time(NULL);
 			msg.turns_per_day = turns_per_day;
 			msg.turns_in_protection = turns_in_protection;
-
+			msg.game_id = game_id;	
 			msg2ne(&msg);
 			IBSendAll(&InterBBSInfo, &msg, sizeof(ibbsmsg_t));
 			return 0;

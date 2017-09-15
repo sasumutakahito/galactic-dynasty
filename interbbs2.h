@@ -2,7 +2,7 @@
 #define __IBBS_2
 
 #define FILEEXT "GAL"
-#define VERSION "00007"
+#define VERSION "00008"
 
 #ifdef WIN32
 #define _MSC_VER 1
