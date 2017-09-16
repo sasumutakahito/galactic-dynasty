@@ -2478,18 +2478,18 @@ void game_loop(player_t *player)
 						while (!bank_done) {
 							if (player->bank_balance >= 0) {
 #ifdef MSC_VER
-								od_printf("Your current bank balance is `bright green`%I64d `white`credits. Interest is %.1f%% per day.\r\n", player->bank_balance, (player->bank_balance > 0 ? 0.10f : 5.f));
+								od_printf("Your current bank balance is `bright green`%I64d `white`credits. Interest is %.1f%% per day.\r\n", player->bank_balance, (player->bank_balance > 0 ? 0.1f : 5.f));
 #else								
 								od_printf("Your current bank balance is `bright green`%lld `white`credits. Interest is %.1f%% per day.\r\n", player->bank_balance, (player->bank_balance > 0 ? 0.10f : 5.f));
 #endif
 							} else {
 #ifdef MSC_VER
-								od_printf("Your current bank balance is `bright red`%I64d `white`credits. Interest is %.1f%% per day.\r\n", player->bank_balance, (player->bank_balance > 0 ? 0.10f : 5.f));
+								od_printf("Your current bank balance is `bright red`%I64d `white`credits. Interest is %.1f%% per day.\r\n", player->bank_balance, (player->bank_balance > 0 ? 0.1f : 5.f));
 #else
 								od_printf("Your current bank balance is `bright red`%lld `white`credits. Interest is %.1f%% per day.\r\n", player->bank_balance, (player->bank_balance > 0 ? 0.10f : 5.f));
 #endif
 							}
-							od_printf("Your current allowed overdraft is %u credits.\r\n", calculate_score(player) / 2);
+							od_printf("Your current allowed overdraft is %u credits.\r\n", (calculate_score(player) * 100) / 2);
 							od_printf("Would you like to (D)eposit, (W)ithdraw or (`bright green`L`white`)eave? ");
 							c = od_get_answer("DdWwLl\r");
 							switch (c) {
@@ -2509,11 +2509,11 @@ void game_loop(player_t *player)
 									break;
 								case 'W':
 								case 'w':
-									od_printf("\r\n\r\nHow much would you like to withdraw (0 - %u credits) ? ", player->bank_balance + (calculate_score(player) / 2));
+									od_printf("\r\n\r\nHow much would you like to withdraw (0 - %u credits) ? ", player->bank_balance + ((calculate_score(player) * 100) / 2));
 									od_input_str(buffer, 10, '0', '9');
 									if (strlen(buffer) != 0) {
 										i = atoi(buffer);
-										if (i > player->bank_balance + (calculate_score(player) / 2)) {
+										if (i > player->bank_balance + ((calculate_score(player) * 100) / 2)) {
 											od_printf("\r\n`bright red`You don't have that many credits!`white`\r\n");
 										} else {
 											player->bank_balance -= i;
