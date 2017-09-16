@@ -696,6 +696,9 @@ uint32_t calculate_score(player_t *player) {
 	score += player->food / 100;
 	score += player->population * 10;
 	score += (player->bank_balance / 1000);
+	
+	score /= 100;
+	
 	return score;
 }
 
