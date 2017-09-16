@@ -3037,7 +3037,7 @@ int main(int argc, char **argv)
 		msg.game_id = game_id;
 		msg2ne(&msg);
 		IBSendAll(&InterBBSInfo, &msg, sizeof(ibbsmsg_t));	
-
+		system("reset.bat");
 		return 0;		
 	}
 
@@ -3136,7 +3136,8 @@ int main(int argc, char **argv)
 		msg.turns_in_protection = turns_in_protection;
 		msg.game_id = game_id;
 		msg2ne(&msg);
-		IBSendAll(&InterBBSInfo, &msg, sizeof(ibbsmsg_t));	
+		IBSendAll(&InterBBSInfo, &msg, sizeof(ibbsmsg_t));
+		system("./reset.sh");	
 		return 0;	
 	}
 
