@@ -137,6 +137,12 @@ tIBResult IBSend(tIBInfo *pInfo, int pszDestNode, void *pBuffer, uint32_t nBuffe
     int minutes;
 	int oldminutes;
 	int packetno = 0;
+
+    now = time(NULL);
+    now_tm = localtime(&now);
+    minutes = (now_tm->tm_mday + 1) * 24 * 60;
+    minutes += (now_tm->tm_hour) * 60;
+    minutes += now_tm->tm_min;
 	
 	fptr = fopen("ibbssync.dat", "rb");
 	if (!fptr) {
@@ -160,12 +166,6 @@ tIBResult IBSend(tIBInfo *pInfo, int pszDestNode, void *pBuffer, uint32_t nBuffe
     if (dest == NULL) {
         return eBadParameter;
     }
-
-    now = time(NULL);
-    now_tm = localtime(&now);
-    minutes = (now_tm->tm_mday + 1) * 24 * 60;
-    minutes += (now_tm->tm_hour) * 60;
-    minutes += now_tm->tm_min;
 
     if (packetno == 0x100) {
         return eBadParameter;
