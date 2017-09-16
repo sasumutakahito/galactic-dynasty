@@ -1738,9 +1738,9 @@ void perform_maintenance()
 	int reset = 0;
 
 	dolog("Performing maintenance...");
-
-	fptr = fopen("lastrun.dat", "rb");
 /*
+	fptr = fopen("lastrun.dat", "rb");
+
 	if (fptr) {
 		fread(&lastrun, sizeof(time_t), 1, fptr);
 		fclose(fptr);
