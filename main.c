@@ -2482,14 +2482,14 @@ void game_loop(player_t *player)
 #ifdef MSC_VER
 								od_printf("Your current bank balance is `bright green`%I64d `white`credits.\r\n", player->bank_balance);
 								positive_bank = (uint32_t)player->bank_balance;
-								od_printf("Interest is 0.1%% (%d credits) per day .\r\n", (int)((double)positive_bank * 0.001));
+								od_printf("Interest is 0.1%% (%d credits) per day .\r\n", (int)(positive_bank / 1000));
 #else								
 								od_printf("Your current bank balance is `bright green`%lld `white`credits.\r\nInterest is 0.1%% (%d credits) per day.\r\n", player->bank_balance, (int)((float)player->bank_balance * 0.001f));
 #endif
 							} else {
 #ifdef MSC_VER
 								od_printf("Your current bank balance is `bright red`%I64d `white`credits.\r\n", player->bank_balance);
-								od_printf("Interest is 5%% (%d credits) per day.\r\n", abs((int)((float)player->bank_balance * 0.05f)));
+								od_printf("Interest is 5%% (%d credits) per day.\r\n", abs((int)(player->bank_balance / 500)));
 #else
 								od_printf("Your current bank balance is `bright red`%lld `white`credits.\r\nInterest is 5%% (%d credits) per day.\r\n", player->bank_balance, abs((int)((float)player->bank_balance * 0.05f)));
 #endif
