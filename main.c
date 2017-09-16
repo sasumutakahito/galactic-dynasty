@@ -1857,7 +1857,7 @@ void perform_maintenance()
 				if (do_interbbs_battle(msg.victim_name, msg.player_name, msg.from, msg.troops, msg.generals, msg.fighters, &outboundmsg) == 0) {
 					outboundmsg.turns_in_protection = turns_in_protection;
 					outboundmsg.turns_per_day = turns_per_day;
-					msg.game_id = game_id;	
+					outboundmsg.game_id = game_id;	
 					msg2ne(&outboundmsg);
 					IBSend(&InterBBSInfo, msg.from, &outboundmsg, sizeof(ibbsmsg_t));
 				} else {
