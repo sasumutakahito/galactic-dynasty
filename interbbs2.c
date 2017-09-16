@@ -195,6 +195,7 @@ tIBResult IBSend(tIBInfo *pInfo, int pszDestNode, void *pBuffer, uint32_t nBuffe
 	} else {
 		fwrite(&minutes, sizeof(int), 1, fptr);
 		fwrite(&packetno, sizeof(int), 1, fptr);
+		fclose(fptr);
 	}
     return eSuccess;
 }
