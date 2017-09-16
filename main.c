@@ -32,6 +32,7 @@ int turns_per_day;
 int turns_in_protection;
 int full;
 uint32_t game_id;
+char *log_path;
 
 tIBInfo InterBBSInfo;
 int interBBSMode;
@@ -137,7 +138,7 @@ void msg2he(ibbsmsg_t *msg) {
 }
 
 void dolog(char *fmt, ...) {
-	char buffer[512];
+	char buffer[PATH_MAX];
 	struct tm *time_now;
 	time_t timen;
 	FILE *logfptr;
@@ -145,8 +146,11 @@ void dolog(char *fmt, ...) {
 	timen = time(NULL);
 
 	time_now = localtime(&timen);
-
-	snprintf(buffer, 512, "%04d%02d%02d.log", time_now->tm_year + 1900, time_now->tm_mon + 1, time_now->tm_mday);
+	if (log_path != NULL) {
+		snprintf(buffer, PATH_MAX, "%s%s%04d%02d%02d.log", log_path, PATH_SEP, time_now->tm_year + 1900, time_now->tm_mon + 1, time_now->tm_mday);
+	} else {
+		snprintf(buffer, PATH_MAX, "%04d%02d%02d.log", time_now->tm_year + 1900, time_now->tm_mon + 1, time_now->tm_mday);
+	}
 	logfptr = fopen(buffer, "a");
     if (!logfptr) {
 		return;
@@ -169,6 +173,15 @@ static int handler(void* user, const char* section, const char* name,
 			turns_per_day = atoi(value);
 		} else if (strcasecmp(name, "turns in protection") == 0) {
 			turns_in_protection = atoi(value);
+		} else if (strcasecmp(name, "log path") == 0) {
+			log_path = strdup(value);
+#ifdef _MSC_VER
+			if (log_path[strlen(log_path) - 1] == '\\') {
+#else
+			if (log_path[strlen(log_path) - 1] == '/') {
+#endif				
+				log_path[strlen(log_path) - 1] = '\0';
+			}
 		}
 	} else if (strcasecmp(section, "interbbs") == 0) {
 		if (strcasecmp(name, "enabled") == 0) {
@@ -1738,27 +1751,7 @@ void perform_maintenance()
 	int reset = 0;
 
 	dolog("Performing maintenance...");
-/*
-	fptr = fopen("lastrun.dat", "rb");
 
-	if (fptr) {
-		fread(&lastrun, sizeof(time_t), 1, fptr);
-		fclose(fptr);
-
-
-		if (timenow - lastrun < 60) {
-			fprintf(stderr, "Maintenance run in last 60 seconds, not running\n");
-			return;
-		}
-
-	}
-	
-	fptr = fopen("lastrun.dat", "wb");
-	if (fptr) {
-		fwrite(&timenow, sizeof(time_t), 1, fptr);		
-		fclose(fptr);
-	}
-*/
 	// parse all incoming messages
 	i = 0;
     k = 0;
@@ -1787,6 +1780,11 @@ void perform_maintenance()
 						fprintf(fptr, "[Main]\n");
 						fprintf(fptr, "Turns in Protection = %d\n", msg.turns_in_protection);
 						fprintf(fptr, "Turns per Day = %d\n", msg.turns_per_day);
+						if (log_path != NULL) {
+							fprintf(fptr, "Log Path = %s\n", log_path);
+						} else {
+							fprintf(fptr, ";Log Path = logs\n");
+						}
 						fprintf(fptr, "\n");
 						fprintf(fptr, "[InterBBS]\n");
 						fprintf(fptr, "Enabled = True\n");
@@ -2985,8 +2983,10 @@ int main(int argc, char **argv)
 		exit(-1);
 	}
 
+	log_path = NULL;
+
 	if (ini_parse("galactic.ini", handler, NULL) <0) {
-		fprintf(stderr, "Unable to load galactic.ini");
+		fprintf(stderr, "Unable to load galactic.ini\n");
 	}
 
 	if (interBBSMode == 1) {
