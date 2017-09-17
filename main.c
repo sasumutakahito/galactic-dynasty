@@ -1789,6 +1789,7 @@ void perform_maintenance()
 						fprintf(fptr, "[InterBBS]\n");
 						fprintf(fptr, "Enabled = True\n");
 						fprintf(fptr, "System Name = %s\n", InterBBSInfo.myNode->name);
+						fprintf(fptr, "Node Number = %d\n", InterBBSInfo.myNode->nodeNumber);
 						fprintf(fptr, "League Number = %d\n", InterBBSInfo.league);
 						fprintf(fptr, "File Inbox = %s\n", InterBBSInfo.myNode->filebox);
 						fprintf(fptr, "Default Outbox = %s\n", InterBBSInfo.defaultFilebox);
