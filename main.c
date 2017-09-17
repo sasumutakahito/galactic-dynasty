@@ -17,6 +17,14 @@
 #include "interbbs2.h"
 #include "inih/ini.h"
 
+#define VERSION_MAJOR 0
+#define VERSION_MINOR 3
+#define VERSION_MICRO 0
+
+#ifndef VERSION_TYPE
+#define VERSION_TYPE "dev"
+#endif
+
 #define TURNS_PER_DAY 5
 #define TURNS_IN_PROTECTION 0
 #if _MSC_VER
@@ -861,7 +869,8 @@ void build_interbbs_scorefile()
 	ibbsscores_t *ptr;
 	int i;
 	int j;
-
+	int gotpipe = 0;
+	
 	scores = NULL;
 	player_count = 0;
 
@@ -949,7 +958,7 @@ void build_interbbs_scorefile()
 			}
 		}
 	}
-
+	gotpipe = 0;
 	fptr = fopen("ibbs_scores.ans", "w");
 
 	if (fptr) {
@@ -957,7 +966,20 @@ void build_interbbs_scorefile()
 		if (fptr2) {
 			c = fgetc(fptr2);
 			while(!feof(fptr2)) {
-				fputc(c, fptr);
+				if (gotpipe == 1) {
+					if (c == 'V') {
+						fprintf(fptr, "v%d.%d.%d-%s", VERSION_MAJOR, VERSION_MINOR, VERSION_MICRO, VERSION_TYPE);
+					} else {
+						fprintf(fptr, "|%c", c);
+					}
+					gotpipe = 0;
+				} else {
+					if (c == '|') {
+						gotpipe = 1;
+					} else {
+						fputc(c, fptr);
+					}
+				}
 				c = fgetc(fptr2);
 			}
 			fclose(fptr2);
@@ -965,19 +987,32 @@ void build_interbbs_scorefile()
 		for (i=0;i<player_count;i++) {
 			fprintf(fptr, " %-31.31s %-31.31s %13u\r\n", scores[i]->player_name, scores[i]->bbs_name, scores[i]->score);
 		}
-
+		gotpipe = 0;
 		fptr2 = fopen("ibbs_score_footer.ans", "r");
 		if (fptr2) {
 			c = fgetc(fptr2);
 			while(!feof(fptr2)) {
-				fputc(c, fptr);
+				if (gotpipe == 1) {
+					if (c == 'V') {
+						fprintf(fptr, "v%d.%d.%d-%s", VERSION_MAJOR, VERSION_MINOR, VERSION_MICRO, VERSION_TYPE);
+					} else {
+						fprintf(fptr, "|%c", c);
+					}
+					gotpipe = 0;
+				} else {
+					if (c == '|') {
+						gotpipe = 1;
+					} else {
+						fputc(c, fptr);
+					}
+				}
 				c = fgetc(fptr2);
 			}
 			fclose(fptr2);
 		}
 		fclose(fptr);	
 	}
-
+	gotpipe = 0;
 	fptr = fopen("ibbs_scores.asc", "w");
 
 	if (fptr) {
@@ -985,7 +1020,20 @@ void build_interbbs_scorefile()
 		if (fptr2) {
 			c = fgetc(fptr2);
 			while(!feof(fptr2)) {
-				fputc(c, fptr);
+				if (gotpipe == 1) {
+					if (c == 'V') {
+						fprintf(fptr, "v%d.%d.%d-%s", VERSION_MAJOR, VERSION_MINOR, VERSION_MICRO, VERSION_TYPE);
+					} else {
+						fprintf(fptr, "|%c", c);
+					}
+					gotpipe = 0;
+				} else {
+					if (c == '|') {
+						gotpipe = 1;
+					} else {
+						fputc(c, fptr);
+					}
+				}
 				c = fgetc(fptr2);
 			}
 			fclose(fptr2);
@@ -993,12 +1041,25 @@ void build_interbbs_scorefile()
 		for (i=0;i<player_count;i++) {
 			fprintf(fptr, " %-31.31s %-31.31s %13u\r\n", scores[i]->player_name, scores[i]->bbs_name, scores[i]->score);
 		}
-
+		gotpipe = 0;
 		fptr2 = fopen("ibbs_score_footer.asc", "r");
 		if (fptr2) {
 			c = fgetc(fptr2);
 			while(!feof(fptr2)) {
-				fputc(c, fptr);
+				if (gotpipe == 1) {
+					if (c == 'V') {
+						fprintf(fptr, "v%d.%d.%d-%s", VERSION_MAJOR, VERSION_MINOR, VERSION_MICRO, VERSION_TYPE);
+					} else {
+						fprintf(fptr, "|%c", c);
+					}
+					gotpipe = 0;
+				} else {
+					if (c == '|') {
+						gotpipe = 1;
+					} else {
+						fputc(c, fptr);
+					}
+				}
 				c = fgetc(fptr2);
 			}
 			fclose(fptr2);
@@ -1022,10 +1083,10 @@ void build_scorefile()
 	sqlite3_stmt *stmt;
 	int score;
 	char c;
-
+	int gotpipe = 0;
 	player_t *player;
 
-
+	gotpipe = 0;
 
 	fptr = fopen("scores.ans", "w");
 
@@ -1034,13 +1095,25 @@ void build_scorefile()
 		if (fptr2) {
 			c = fgetc(fptr2);
 			while(!feof(fptr2)) {
-				fputc(c, fptr);
+				if (gotpipe == 1) {
+					if (c == 'V') {
+						fprintf(fptr, "v%d.%d.%d-%s", VERSION_MAJOR, VERSION_MINOR, VERSION_MICRO, VERSION_TYPE);
+					} else {
+						fprintf(fptr, "|%c", c);
+					}
+					gotpipe = 0;
+				} else {
+					if (c == '|') {
+						gotpipe = 1;
+					} else {
+						fputc(c, fptr);
+					}
+				}
 				c = fgetc(fptr2);
 			}
-
 			fclose(fptr2);
 		}
-
+		
 		rc = sqlite3_open("users.db3", &db);
 		if (rc) {
 			// Error opening the database
@@ -1059,37 +1132,62 @@ void build_scorefile()
 
 		sqlite3_finalize(stmt);
 		sqlite3_close(db);
-
+		gotpipe = 0;
 		fptr2 = fopen("score_footer.ans", "r");
 		if (fptr2) {
 			c = fgetc(fptr2);
 			while(!feof(fptr2)) {
-				fputc(c, fptr);
+				if (gotpipe == 1) {
+					if (c == 'V') {
+						fprintf(fptr, "v%d.%d.%d-%s", VERSION_MAJOR, VERSION_MINOR, VERSION_MICRO, VERSION_TYPE);
+					} else {
+						fprintf(fptr, "|%c", c);
+					}
+					gotpipe = 0;
+				} else {
+					if (c == '|') {
+						gotpipe = 1;
+					} else {
+						fputc(c, fptr);
+					}
+				}
 				c = fgetc(fptr2);
 			}
-
 			fclose(fptr2);
-		}		
+		}
 		
 		fclose(fptr);
 
 
 	}
+	gotpipe = 0;
 
 	fptr = fopen("scores.asc", "w");
-
+	
 	if (fptr) {
 		fptr2 = fopen("score_header.asc", "r");
 		if (fptr2) {
 			c = fgetc(fptr2);
 			while(!feof(fptr2)) {
-				fputc(c, fptr);
+				if (gotpipe == 1) {
+					if (c == 'V') {
+						fprintf(fptr, "v%d.%d.%d-%s", VERSION_MAJOR, VERSION_MINOR, VERSION_MICRO, VERSION_TYPE);
+					} else {
+						fprintf(fptr, "|%c", c);
+					}
+					gotpipe = 0;
+				} else {
+					if (c == '|') {
+						gotpipe = 1;
+					} else {
+						fputc(c, fptr);
+					}
+				}
 				c = fgetc(fptr2);
 			}
-
 			fclose(fptr2);
 		}
-
+		
 		rc = sqlite3_open("users.db3", &db);
 		if (rc) {
 			// Error opening the database
@@ -1108,17 +1206,29 @@ void build_scorefile()
 
 		sqlite3_finalize(stmt);
 		sqlite3_close(db);
-		
+		gotpipe = 0;
 		fptr2 = fopen("score_footer.asc", "r");
 		if (fptr2) {
 			c = fgetc(fptr2);
 			while(!feof(fptr2)) {
-				fputc(c, fptr);
+				if (gotpipe == 1) {
+					if (c == 'V') {
+						fprintf(fptr, "v%d.%d.%d-%s", VERSION_MAJOR, VERSION_MINOR, VERSION_MICRO, VERSION_TYPE);
+					} else {
+						fprintf(fptr, "|%c", c);
+					}
+					gotpipe = 0;
+				} else {
+					if (c == '|') {
+						gotpipe = 1;
+					} else {
+						fputc(c, fptr);
+					}
+				}
 				c = fgetc(fptr2);
 			}
-
 			fclose(fptr2);
-		}		
+		}
 		
 		fclose(fptr);
 	}	
@@ -2415,11 +2525,11 @@ void game_loop(player_t *player)
 							od_printf("\r\n`bright red`You can't afford that many!`white`\r\n");
 						} else {
 							od_printf("What kind of planets do you want?\r\n");
-							od_printf("  1. Ore\r\n");
-							od_printf("  2. Food\r\n");
-							od_printf("  3. Soldier\r\n");
-							od_printf("  4. Industrial\r\n");
-							od_printf("  5. Urban\r\n");
+							od_printf("  1. Ore        (You have: %d)\r\n", player->planets_ore);
+							od_printf("  2. Food       (You have: %d)\r\n", player->planets_food);
+							od_printf("  3. Soldier    (You have: %d)\r\n", player->planets_military);
+							od_printf("  4. Industrial (You have: %d)\r\n", player->planets_industrial);
+							od_printf("  5. Urban      (You have: %d)\r\n", player->planets_urban);
 							c = od_get_answer("12345");
 							switch (c) {
 							case '1':
@@ -3243,7 +3353,7 @@ int main(int argc, char **argv)
 	gPlayer->last_played = timenow;
 
 	do {
-		od_printf("\r\n`white`Game Menu\r\n");
+		od_printf("\r\n`white`Game Menu (v%d.%d.%d-%s)\r\n", VERSION_MAJOR, VERSION_MINOR, VERSION_MICRO, VERSION_TYPE);
 		od_printf("`red`--------------------------------------\r\n");
 		od_printf(" `white`(`bright yellow`1`white`) Play Game\r\n");
 		od_printf(" `white`(`bright yellow`2`white`) See Messages\r\n");
