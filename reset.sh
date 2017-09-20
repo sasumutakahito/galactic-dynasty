@@ -11,3 +11,8 @@ if [ -e scores.ans ]
 then
         rm scores.ans
 fi
+
+if [ -e game_id.dat ]
+then
+	rm game_id.dat
+fi
