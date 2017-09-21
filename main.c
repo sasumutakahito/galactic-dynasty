@@ -2426,7 +2426,7 @@ void game_loop(player_t *player)
 		done = 0;
 		while (done == 0) {
 			// do you want to buy anything
-			od_printf("`bright green`============================================================\r\n");
+			od_printf("\r\n`bright green`============================================================\r\n");
 			od_printf("`white` Buy Stuff                 Your funds: %u credits\r\n", player->credits);
 			od_printf("`bright green`============================`green`[`white`Price`green`]`bright green`=`green`[`white`You Have`green`]`bright green`=`green`[`white`Can Afford`green`]`bright green`=\r\n");
 			od_printf("`white` (1) Troops                    100    %6u     %6u\r\n", player->troops, player->credits / 100);
@@ -2438,7 +2438,7 @@ void game_loop(player_t *player)
 			} else {
 				od_printf(" (5) Command Ship %16u    %6u%%       %4s\r\n", 10000 * (player->command_ship + 1), player->command_ship, (player->credits >= 10000 * (player->command_ship + 1) ? "`bright green`yes`white`" : "`bright red` no`white`" ));
 			}
-			od_printf(" (6) Colonize Planets         2000    %6u     %6u\r\n", player->planets_ore + player->planets_food + player->planets_industrial + player->planets_military + player->planets_urban, player->credits / 2000);
+			od_printf(" (6) Colonize Planets                 %6u        ...\r\n", player->planets_ore + player->planets_food + player->planets_industrial + player->planets_military + player->planets_urban);
 			od_printf(" (7) Food                      100    %6u     %6u\r\n", player->food, player->credits / 100);
 			od_printf(" (8) Spies                    5000    %6u     %6u\r\n", player->spies, player->credits / 5000);
 			od_printf("\r\n (9) Visit the Bank\r\n");
@@ -2517,43 +2517,116 @@ void game_loop(player_t *player)
 					}
 					break;
 				case '6':
-					od_printf("How many planets do you want to buy? (MAX `bright yellow`%u`white`) ", player->credits / 2000);
-					od_input_str(buffer, 8, '0', '9');
-					if (strlen(buffer) != 0) {
-						i = atoi(buffer);
-						if (i * 2000 > player->credits) {
-							od_printf("\r\n`bright red`You can't afford that many!`white`\r\n");
-						} else {
-							od_printf("What kind of planets do you want?\r\n");
-							od_printf("  1. Ore        (You have: %d)\r\n", player->planets_ore);
-							od_printf("  2. Food       (You have: %d)\r\n", player->planets_food);
-							od_printf("  3. Soldier    (You have: %d)\r\n", player->planets_military);
-							od_printf("  4. Industrial (You have: %d)\r\n", player->planets_industrial);
-							od_printf("  5. Urban      (You have: %d)\r\n", player->planets_urban);
-							c = od_get_answer("12345");
-							switch (c) {
-							case '1':
-								player->planets_ore += i;
-								player->credits -= i * 2000;
-								break;
-							case '2':
-								player->planets_food += i;
-								player->credits -= i * 2000;
-								break;
-							case '3':
-								player->planets_military += i;
-								player->credits -= i * 2000;
-								break;
-							case '4':
-								player->planets_industrial += i;
-								player->credits -= i * 2000;
-								break;
-							case '5':
-								player->planets_urban += i;
-								player->credits -= i * 2000;							
+					od_printf("What kind of planets do you want?\r\n");
+					od_printf("  1. Ore        (You have: %d)\r\n", player->planets_ore);
+					od_printf("  2. Food       (You have: %d)\r\n", player->planets_food);
+					od_printf("  3. Soldier    (You have: %d)\r\n", player->planets_military);
+					od_printf("  4. Industrial (You have: %d)\r\n", player->planets_industrial);
+					od_printf("  5. Urban      (You have: %d)\r\n", player->planets_urban);
+					c = od_get_answer("12345");
+					switch (c) {
+					case '1':
+						od_printf("How many ore planets do you want to aquire? ");
+						od_input_str(buffer, 8, '0', '9');
+						if (strlen(buffer) != 0) {
+							i = atoi(buffer);
+							if (i > 0) {
+								od_printf("Exploration costs for %d ore planets amounts to %d credits.\r\n", i, i * 2000 + (player->planets_ore + i) * 100);
+								od_printf("You have %d credits, go ahead? (Y/`bright green`N`white`) ", player->credits);
+								c = od_get_answer("YyNn\r");
+								if (c == 'y' || c == 'Y') {
+									if (player->credits < i * 2000 + (player->planets_ore + i) * 100) {
+										od_printf("\r\n`bright red`You can't afford that!`white`\r\n");
+									} else {
+										player->planets_ore += i;
+										player->credits -= ((i * 2000) + ((player->planets_ore + i)  * 100));
+									}
+								}
 							}
 						}
+						break;
+					case '2':
+						od_printf("How many food planets do you want to aquire? ");
+						od_input_str(buffer, 8, '0', '9');
+						if (strlen(buffer) != 0) {
+							i = atoi(buffer);
+							if (i > 0) {
+								od_printf("Exploration costs for %d food planets amounts to %d credits.\r\n", i, i * 2000 + (player->planets_food + i) * 100);
+								od_printf("You have %d credits, go ahead? (Y/`bright green`N`white`) ", player->credits);
+								c = od_get_answer("YyNn\r");
+								if (c == 'y' || c == 'Y') {
+									if (player->credits < i * 2000 + (player->planets_food + i) * 100) {
+										od_printf("\r\n`bright red`You can't afford that!`white`\r\n");
+									} else {
+										player->planets_food += i;
+										player->credits -= ((i * 2000) + ((player->planets_food + i) * 100));
+									}
+								}
+							}
+						}
+						break;
+					case '3':
+						od_printf("How many military planets do you want to aquire? ");
+						od_input_str(buffer, 8, '0', '9');
+						if (strlen(buffer) != 0) {
+							i = atoi(buffer);
+							if (i > 0) {
+								od_printf("Exploration costs for %d soldier planets amounts to %d credits.\r\n", i, i * 2000 + (player->planets_military + i) * 100);
+								od_printf("You have %d credits, go ahead? (Y/`bright green`N`white`) ", player->credits);
+								c = od_get_answer("YyNn\r");
+								if (c == 'y' || c == 'Y') {
+									if (player->credits < i * 2000 + (player->planets_military + i) * 100) {
+										od_printf("\r\n`bright red`You can't afford that!`white`\r\n");
+									} else {
+										player->planets_military += i;
+										player->credits -= ((i * 2000) + ((player->planets_military + i) * 100));
+									}
+								}
+							}
+						}
+						break;
+					case '4':
+						od_printf("How many industrial planets do you want to aquire? ");
+						od_input_str(buffer, 8, '0', '9');
+						if (strlen(buffer) != 0) {
+							i = atoi(buffer);
+							if (i > 0) {
+								od_printf("Exploration costs for %d industrial planets amounts to %d credits.\r\n", i, i * 2000 + (player->planets_industrial + i) * 100);
+								od_printf("You have %d credits, go ahead? (Y/`bright green`N`white`) ", player->credits);
+								c = od_get_answer("YyNn\r");
+								if (c == 'y' || c == 'Y') {
+									if (player->credits < i * 2000 + (player->planets_industrial + i) * 100) {
+										od_printf("\r\n`bright red`You can't afford that!`white`\r\n");
+									} else {
+										player->planets_industrial += i;
+										player->credits -= ((i * 2000) + ((player->planets_industrial + i) * 100));
+									}
+								}
+							}
+						}
+						break;
+					case '5':
+						od_printf("How many urban planets do you want to aquire? ");
+						od_input_str(buffer, 8, '0', '9');
+						if (strlen(buffer) != 0) {
+							i = atoi(buffer);
+							if (i > 0) {
+								od_printf("Exploration costs for %d urban planets amounts to %d credits.\r\n", i, i * 2000 + (player->planets_urban + i) * 100);
+								od_printf("You have %d credits, go ahead? (Y/`bright green`N`white`) ", player->credits);
+								c = od_get_answer("YyNn\r");
+								if (c == 'y' || c == 'Y') {
+									if (player->credits < i * 2000 + (player->planets_urban + i) * 100) {
+										od_printf("\r\n`bright red`You can't afford that!`white`\r\n");
+									} else {
+										player->planets_urban += i;
+										player->credits -= ((i * 2000) + ((player->planets_urban + i) * 100));
+									}
+								}
+							}
+						}
+						break;							
 					}
+											
 					break;
 				case '7':
 					od_printf("How much food do you want to buy? (MAX `bright yellow`%u`white`) ", player->credits / 100);
