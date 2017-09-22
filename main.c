@@ -3030,7 +3030,7 @@ void game_loop(player_t *player)
 			
 			player->ore -= total_industrial;
 			
-			od_printf("Your industrial planets produced %u sprockets from leaving you with %u ore.\r\n", total_industrial, player->ore);
+			od_printf("Your industrial planets produced %u sprockets leaving you with %u ore.\r\n", total_industrial, player->ore);
 
 			player->sprockets += total_industrial;
 		}
