@@ -56,7 +56,7 @@ if event_rand < 25 then
         gd_print_green("Bumper harvests! Farmers produce an extra, " .. math.floor(event_mod) .. " food.");        
     elseif event == 8 then
         local food = gd_get_food();
-        local event_mod = math.random(5) / 100 * troops;
+        local event_mod = math.random(5) / 100 * food;
         food = food - event_mod;
         gd_set_food(food);
         gd_print_yellow("Galactic weevils infest crops, " .. math.floor(event_mod) .. " food lost.");                        
