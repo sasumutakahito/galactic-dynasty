@@ -2451,7 +2451,7 @@ void game_loop(player_t *player)
 			if (player->command_ship == 100) {
 				od_printf(" (5) Command Ship              N/A    %6u%%  `bright green`complete`white`\r\n", player->command_ship);
 			} else {
-				od_printf(" (5) Command Ship %16u    %6u%%       %4s\r\n", 10000 * (player->command_ship + 1), player->command_ship, (player->sprockets >= 10000 * (player->command_ship + 1) ? "`bright green`yes`white`" : "`bright red` no`white`" ));
+				od_printf(" (5) Command Ship %16uSPK %6u%%       %4s\r\n", 10000 * (player->command_ship + 1), player->command_ship, (player->sprockets >= 10000 * (player->command_ship + 1) ? "`bright green`yes`white`" : "`bright red` no`white`" ));
 			}
 			od_printf(" (6) Colonize Planets                 %6u        ...\r\n", player->planets_ore + player->planets_food + player->planets_industrial + player->planets_military + player->planets_urban);
 			od_printf(" (7) Food                      100    %6u     %6u\r\n", player->food, player->credits / 100);
@@ -2522,9 +2522,9 @@ void game_loop(player_t *player)
 					
 					if (c == 'y' || c == 'Y') {
 						if (player->command_ship >= 100) {
-							od_printf("\r\n`bright red`You can't buy any more!`white`\r\n");
+							od_printf("\r\n`bright red`You can't construct any more!`white`\r\n");
 						} else if ((player->command_ship + 1) * 10000 > player->sprockets) {
-							od_printf("\r\n`bright red`You can't afford that!`white`\r\n");
+							od_printf("\r\n`bright red`You don't have enough sprockets!`white`\r\n");
 						} else {
 							player->command_ship++;
 							player->sprockets -= player->command_ship * 10000;
