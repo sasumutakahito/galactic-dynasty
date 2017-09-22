@@ -6,7 +6,7 @@ math.randomseed(os.time());
 local event_rand = math.random(100);
 
 -- Which event should occur
-local total_events = 6;
+local total_events = 8;
 local event = math.random(total_events)
 
 -- If chance is 25% or less
@@ -48,5 +48,17 @@ if event_rand < 25 then
         troops = troops + event_mod;
         gd_set_troops(troops);
         gd_print_green("Recruitment propaganda pays off, " .. math.floor(event_mod) .. " troops enlist.");        
+    elseif event == 7 then
+        local food = gd_get_food();
+        local event_mod = math.random(5) / 100 * food;
+        food = food + event_mod;
+        gd_set_food(food);
+        gd_print_green("Bumper harvests! Farmers produce an extra, " .. math.floor(event_mod) .. " food.");        
+    elseif event == 8 then
+        local food = gd_get_food();
+        local event_mod = math.random(5) / 100 * troops;
+        food = food - event_mod;
+        gd_set_food(food);
+        gd_print_yellow("Galactic weevils infest crops, " .. math.floor(event_mod) .. " food lost.");                        
     end
 end
