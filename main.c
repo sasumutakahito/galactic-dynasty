@@ -73,6 +73,8 @@ typedef struct player {
 	uint32_t last_score;
 	uint32_t total_turns;
 	int64_t bank_balance;
+	uint32_t sprockets;
+	uint32_t ore;
 } player_t;
 
 player_t *gPlayer;
@@ -705,7 +707,7 @@ void unseen_ibbs_msgs(player_t *player) {
 }
 
 uint32_t calculate_score(player_t *player) {
-	uint32_t score;
+	uint64_t score;
 
 	score = (player->credits / 1000);
 	score += player->troops;
@@ -717,10 +719,11 @@ uint32_t calculate_score(player_t *player) {
 	score += player->food / 100;
 	score += player->population * 10;
 	score += (player->bank_balance / 1000);
-	
+	score += (player->sprockets / 100);
+	score += (player->ore / 100);
 	score /= 100;
 	
-	return score;
+	return (uint32_t)score;
 }
 
 
@@ -780,6 +783,8 @@ player_t *load_player_gn(char *gamename) {
 		thePlayer->last_score = sqlite3_column_int(stmt, 19);
 		thePlayer->total_turns = sqlite3_column_int(stmt, 20);
 		thePlayer->bank_balance = sqlite3_column_int(stmt, 21);
+		thePlayer->sprockets = sqlite3_column_int(stmt, 22);
+		thePlayer->ore = sqlite3_column_int(stmt, 23);
 		sqlite3_finalize(stmt);
 		sqlite3_close(db);
 	} else {
@@ -844,6 +849,8 @@ player_t *load_player(char *bbsname) {
 		thePlayer->last_score = sqlite3_column_int(stmt, 19);
 		thePlayer->total_turns = sqlite3_column_int(stmt, 20);
 		thePlayer->bank_balance = sqlite3_column_int(stmt, 21);
+		thePlayer->sprockets = sqlite3_column_int(stmt, 22);
+		thePlayer->ore = sqlite3_column_int(stmt, 23);		
 		sqlite3_finalize(stmt);
 		sqlite3_close(db);
 	} else {
@@ -1321,6 +1328,8 @@ player_t *new_player(char *bbsname) {
 	player->last_score = 0;
 	player->total_turns = 0;
 	player->bank_balance = 0;
+	player->sprockets = 0;
+	player->ore = 0;
 	
 	return player;
 }
@@ -1371,7 +1380,7 @@ void save_player(player_t *player) {
 	if (player->id == -1) {
 			snprintf(sqlbuffer, 1024, "INSERT INTO users (bbsname, gamename, troops, generals, fighters, defence_stations, "
 									  "population, food, credits, planets_food, planets_ore, planets_industrial, "
-									  "planets_military, command_ship, turns_left, last_played, spies, last_score, total_turns, planets_urban, bank_balance) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+									  "planets_military, command_ship, turns_left, last_played, spies, last_score, total_turns, planets_urban, bank_balance, sprockets, ore) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 			sqlite3_prepare_v2(db, sqlbuffer, strlen(sqlbuffer) + 1, &stmt, NULL);
 			sqlite3_bind_text(stmt, 1, player->bbsname, strlen(player->bbsname) + 1, SQLITE_STATIC);
 			sqlite3_bind_text(stmt, 2, player->gamename, strlen(player->gamename) + 1, SQLITE_STATIC);
@@ -1394,6 +1403,8 @@ void save_player(player_t *player) {
 			sqlite3_bind_int(stmt, 19, player->total_turns);
 			sqlite3_bind_int(stmt, 20, player->planets_urban);
 			sqlite3_bind_int(stmt, 21, player->bank_balance);
+			sqlite3_bind_int(stmt, 22, player->sprockets);
+			sqlite3_bind_int(stmt, 23, player->ore);			
 	} else {
 			snprintf(sqlbuffer, 1024, "UPDATE users SET gamename=?,"
 													   "troops=?,"
@@ -1412,7 +1423,7 @@ void save_player(player_t *player) {
 													   "last_played=?,"
 													   "spies=?, "
 													   "last_score=?, "
-													   "total_turns=?, planets_urban=?, bank_balance = ? WHERE id=?;");
+													   "total_turns=?, planets_urban=?, bank_balance = ?, sprockets = ?, ore = ? WHERE id=?;");
 			sqlite3_prepare_v2(db, sqlbuffer, strlen(sqlbuffer) + 1, &stmt, NULL);
 			sqlite3_bind_text(stmt, 1, player->gamename, strlen(player->gamename) + 1, SQLITE_STATIC);
 			sqlite3_bind_int(stmt, 2, player->troops);
@@ -1434,7 +1445,9 @@ void save_player(player_t *player) {
 			sqlite3_bind_int(stmt, 18, player->total_turns);
 			sqlite3_bind_int(stmt, 19, player->planets_urban);
 			sqlite3_bind_int(stmt, 20, player->bank_balance);
-			sqlite3_bind_int(stmt, 21, player->id);
+			sqlite3_bind_int(stmt, 21, player->sprockets);
+			sqlite3_bind_int(stmt, 22, player->ore);
+			sqlite3_bind_int(stmt, 23, player->id);
 	}
 	rc = sqlite3_step(stmt);
 	if (rc != SQLITE_DONE) {
@@ -2222,6 +2235,8 @@ void state_of_the_galaxy(player_t *player) {
 	od_printf(" - Population   : %u million\r\n", player->population);
 	od_printf(" - Food         : %u tonnes\r\n", player->food);
 	od_printf(" - Credits      : %u\r\n", player->credits);
+	od_printf(" - Ore          : %u\r\n", player->ore);
+	od_printf(" - Sprockets    : %u\r\n", player->sprockets);
 	od_printf(" - Troops       : %u\r\n", player->troops);
 	od_printf(" - Generals     : %u\r\n", player->generals);
 	od_printf(" - Fighters     : %u\r\n", player->fighters);
@@ -2436,7 +2451,7 @@ void game_loop(player_t *player)
 			if (player->command_ship == 100) {
 				od_printf(" (5) Command Ship              N/A    %6u%%  `bright green`complete`white`\r\n", player->command_ship);
 			} else {
-				od_printf(" (5) Command Ship %16u    %6u%%       %4s\r\n", 10000 * (player->command_ship + 1), player->command_ship, (player->credits >= 10000 * (player->command_ship + 1) ? "`bright green`yes`white`" : "`bright red` no`white`" ));
+				od_printf(" (5) Command Ship %16u    %6u%%       %4s\r\n", 10000 * (player->command_ship + 1), player->command_ship, (player->sprockets >= 10000 * (player->command_ship + 1) ? "`bright green`yes`white`" : "`bright red` no`white`" ));
 			}
 			od_printf(" (6) Colonize Planets                 %6u        ...\r\n", player->planets_ore + player->planets_food + player->planets_industrial + player->planets_military + player->planets_urban);
 			od_printf(" (7) Food                      100    %6u     %6u\r\n", player->food, player->credits / 100);
@@ -2508,11 +2523,11 @@ void game_loop(player_t *player)
 					if (c == 'y' || c == 'Y') {
 						if (player->command_ship >= 100) {
 							od_printf("\r\n`bright red`You can't buy any more!`white`\r\n");
-						} else if ((player->command_ship + 1) * 10000 > player->credits) {
+						} else if ((player->command_ship + 1) * 10000 > player->sprockets) {
 							od_printf("\r\n`bright red`You can't afford that!`white`\r\n");
 						} else {
 							player->command_ship++;
-							player->credits -= player->command_ship * 10000;
+							player->sprockets -= player->command_ship * 10000;
 						}
 					}
 					break;
@@ -2992,27 +3007,32 @@ void game_loop(player_t *player)
 
 		if (player->planets_ore > 0) {
 			if (player->planets_ore > (uint32_t)(player->population / 25.f)) {
-				total_ore = (uint32_t)(player->population / 25.f * 1000.f);
+				total_ore = (uint32_t)(player->population / 25.f * 100.f);
 			} else {
-				total_ore = player->planets_ore * 1000;
+				total_ore = player->planets_ore * 100;
 			}
 
-			od_printf("Your ore planets mined %u worth of minerals\r\n", total_ore);
+			od_printf("Your ore planets mined %u ore.\r\n", total_ore);
 
-			player->credits += total_ore;
+			player->ore += total_ore;
 		}
 
 		if (player->planets_industrial > 0) {
 
 			if (player->planets_industrial > (uint32_t)(player->population / 25.f)) {
-				total_industrial = (uint32_t)(player->population / 25.f * 1000.f);
+				total_industrial = (uint32_t)(player->population / 25.f * 100.f);
 			} else {
-				total_industrial = player->planets_industrial * 1000;
+				total_industrial = player->planets_industrial * 100;
 			}
+			if (total_industrial > player->ore) {
+				total_industrial = player->ore;
+			}
+			
+			player->ore -= total_industrial;
+			
+			od_printf("Your industrial planets produced %u sprockets from leaving you with %u ore.\r\n", total_industrial, player->ore);
 
-			od_printf("Your industrial planets produced %u worth of goods\r\n", total_industrial);
-
-			player->credits += total_industrial;
+			player->sprockets += total_industrial;
 		}
 		od_printf("Taxes produce %u credits\r\n", player->population * 23);
 
