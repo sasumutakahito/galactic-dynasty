@@ -2546,15 +2546,15 @@ void game_loop(player_t *player)
 						if (strlen(buffer) != 0) {
 							i = atoi(buffer);
 							if (i > 0) {
-								od_printf("Exploration costs for %d ore planets amounts to %d credits.\r\n", i, i * 2000 + (player->planets_ore + i) * 100);
+								od_printf("Exploration costs for %d ore planets amounts to %u credits.\r\n", i, i * 2000 + (player->planets_ore + i) * 100);
 								od_printf("You have %d credits, go ahead? (Y/`bright green`N`white`) ", player->credits);
 								c = od_get_answer("YyNn\r");
 								if (c == 'y' || c == 'Y') {
 									if (player->credits < i * 2000 + (player->planets_ore + i) * 100) {
 										od_printf("\r\n`bright red`You can't afford that!`white`\r\n");
 									} else {
-										player->planets_ore += i;
 										player->credits -= ((i * 2000) + ((player->planets_ore + i)  * 100));
+										player->planets_ore += i;
 									}
 								}
 							}
@@ -2566,15 +2566,15 @@ void game_loop(player_t *player)
 						if (strlen(buffer) != 0) {
 							i = atoi(buffer);
 							if (i > 0) {
-								od_printf("Exploration costs for %d food planets amounts to %d credits.\r\n", i, i * 2000 + (player->planets_food + i) * 100);
+								od_printf("Exploration costs for %d food planets amounts to %u credits.\r\n", i, i * 2000 + (player->planets_food + i) * 100);
 								od_printf("You have %d credits, go ahead? (Y/`bright green`N`white`) ", player->credits);
 								c = od_get_answer("YyNn\r");
 								if (c == 'y' || c == 'Y') {
 									if (player->credits < i * 2000 + (player->planets_food + i) * 100) {
 										od_printf("\r\n`bright red`You can't afford that!`white`\r\n");
 									} else {
-										player->planets_food += i;
 										player->credits -= ((i * 2000) + ((player->planets_food + i) * 100));
+										player->planets_food += i;
 									}
 								}
 							}
@@ -2586,15 +2586,15 @@ void game_loop(player_t *player)
 						if (strlen(buffer) != 0) {
 							i = atoi(buffer);
 							if (i > 0) {
-								od_printf("Exploration costs for %d soldier planets amounts to %d credits.\r\n", i, i * 2000 + (player->planets_military + i) * 100);
+								od_printf("Exploration costs for %d soldier planets amounts to %u credits.\r\n", i, i * 2000 + (player->planets_military + i) * 100);
 								od_printf("You have %d credits, go ahead? (Y/`bright green`N`white`) ", player->credits);
 								c = od_get_answer("YyNn\r");
 								if (c == 'y' || c == 'Y') {
 									if (player->credits < i * 2000 + (player->planets_military + i) * 100) {
 										od_printf("\r\n`bright red`You can't afford that!`white`\r\n");
 									} else {
-										player->planets_military += i;
 										player->credits -= ((i * 2000) + ((player->planets_military + i) * 100));
+										player->planets_military += i;
 									}
 								}
 							}
@@ -2606,15 +2606,15 @@ void game_loop(player_t *player)
 						if (strlen(buffer) != 0) {
 							i = atoi(buffer);
 							if (i > 0) {
-								od_printf("Exploration costs for %d industrial planets amounts to %d credits.\r\n", i, i * 2000 + (player->planets_industrial + i) * 100);
+								od_printf("Exploration costs for %d industrial planets amounts to %u credits.\r\n", i, i * 2000 + (player->planets_industrial + i) * 100);
 								od_printf("You have %d credits, go ahead? (Y/`bright green`N`white`) ", player->credits);
 								c = od_get_answer("YyNn\r");
 								if (c == 'y' || c == 'Y') {
 									if (player->credits < i * 2000 + (player->planets_industrial + i) * 100) {
 										od_printf("\r\n`bright red`You can't afford that!`white`\r\n");
 									} else {
-										player->planets_industrial += i;
 										player->credits -= ((i * 2000) + ((player->planets_industrial + i) * 100));
+										player->planets_industrial += i;
 									}
 								}
 							}
@@ -2626,15 +2626,15 @@ void game_loop(player_t *player)
 						if (strlen(buffer) != 0) {
 							i = atoi(buffer);
 							if (i > 0) {
-								od_printf("Exploration costs for %d urban planets amounts to %d credits.\r\n", i, i * 2000 + (player->planets_urban + i) * 100);
+								od_printf("Exploration costs for %d urban planets amounts to %u credits.\r\n", i, i * 2000 + (player->planets_urban + i) * 100);
 								od_printf("You have %d credits, go ahead? (Y/`bright green`N`white`) ", player->credits);
 								c = od_get_answer("YyNn\r");
 								if (c == 'y' || c == 'Y') {
 									if (player->credits < i * 2000 + (player->planets_urban + i) * 100) {
 										od_printf("\r\n`bright red`You can't afford that!`white`\r\n");
 									} else {
-										player->planets_urban += i;
 										player->credits -= ((i * 2000) + ((player->planets_urban + i) * 100));
+										player->planets_urban += i;
 									}
 								}
 							}
