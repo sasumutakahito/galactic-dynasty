@@ -18,7 +18,7 @@
 #include "inih/ini.h"
 
 #define VERSION_MAJOR 0
-#define VERSION_MINOR 3
+#define VERSION_MINOR 4
 #define VERSION_MICRO 0
 
 #ifndef VERSION_TYPE
