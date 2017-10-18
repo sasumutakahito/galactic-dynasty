@@ -1569,7 +1569,7 @@ int do_interbbs_battle(char *victim, char *attacker, int from, uint32_t troops, 
 		
 		dtroops = (int)troops - ((int)victim_player->troops - (int)((float)victim_player->troops * ((float)difference / 100.f)));
 		dgenerals = (int)generals - ((int)victim_player->generals - (int)((float)victim_player->generals * ((float)difference / 100.f)));
-		dfighters = (int)fighters - ((int)victim_player->fighters - (int)((float)victim_player->defence_stations * ((float)difference / 100.f)));
+		dfighters = (int)fighters - ((int)victim_player->defence_stations - (int)((float)victim_player->defence_stations * ((float)difference / 100.f)));
 
 		
 		if (dtroops < 0) dtroops = 0;
@@ -1615,7 +1615,7 @@ int do_interbbs_battle(char *victim, char *attacker, int from, uint32_t troops, 
 		
 		dtroops = (int)troops - ((int)victim_player->troops - (int)((float)victim_player->troops * ((float)difference / 100.f)));
 		dgenerals = (int)generals - ((int)victim_player->generals - (int)((float)victim_player->generals * ((float)difference / 100.f)));
-		dfighters = (int)fighters - ((int)victim_player->fighters - (int)((float)victim_player->defence_stations * ((float)difference / 100.f)));
+		dfighters = (int)fighters - ((int)victim_player->defence_stations - (int)((float)victim_player->defence_stations * ((float)difference / 100.f)));
 		
 
 		
@@ -1753,7 +1753,7 @@ void do_battle(player_t *victim, player_t *attacker, int troops, int generals, i
 		
 		dtroops = (int)troops - ((int)victim->troops - (int)((float)victim->troops * ((float)difference / 100.f)));
 		dgenerals = (int)generals - ((int)victim->generals - (int)((float)victim->generals * ((float)difference / 100.f)));
-		dfighters = (int)fighters - ((int)victim->fighters - (int)((float)victim->defence_stations * ((float)difference / 100.f)));
+		dfighters = (int)fighters - ((int)victim->defence_stations - (int)((float)victim->defence_stations * ((float)difference / 100.f)));
 		
 		if (dtroops < 0) dtroops = 0;
 		if (dgenerals < 0) dgenerals = 0;
@@ -1800,7 +1800,7 @@ void do_battle(player_t *victim, player_t *attacker, int troops, int generals, i
 		
 		dtroops = (int)troops - ((int)victim->troops - (int)((float)victim->troops * ((float)difference / 100.f)));
 		dgenerals = (int)generals - ((int)victim->generals - (int)((float)victim->generals * ((float)difference / 100.f)));
-		dfighters = (int)fighters - ((int)victim->fighters - (int)((float)victim->defence_stations * ((float)difference / 100.f)));
+		dfighters = (int)fighters - ((int)victim->defence_stations - (int)((float)victim->defence_stations * ((float)difference / 100.f)));
 	
 		
 		if (dtroops < 0) dtroops = 0;
