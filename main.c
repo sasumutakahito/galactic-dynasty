@@ -3167,6 +3167,7 @@ int main(int argc, char **argv)
 	FILE *fptr;
 	int j;
 	int newnodenum;
+	uint32_t newgameid;
 	int start;
 	int end;
 	char newnodename[256];
