@@ -39,7 +39,6 @@
 int turns_per_day;
 int turns_in_protection;
 int full;
-uint32_t game_id;
 char *log_path;
 
 tIBInfo InterBBSInfo;
@@ -106,7 +105,6 @@ typedef struct ibbsmsg {
 	uint32_t created;
 	uint32_t turns_per_day;
 	uint32_t turns_in_protection;
-	uint32_t game_id;
 } __attribute__((packed)) ibbsmsg_t;
 
 typedef struct ibbsscore {
@@ -128,7 +126,6 @@ void msg2ne(ibbsmsg_t *msg) {
 	msg->created = htonl(msg->created);
 	msg->turns_per_day = htonl(msg->turns_per_day);
 	msg->turns_in_protection = htonl(msg->turns_in_protection);
-	msg->game_id = htonl(msg->game_id);
 }
 
 void msg2he(ibbsmsg_t *msg) {
@@ -144,7 +141,6 @@ void msg2he(ibbsmsg_t *msg) {
 	msg->created = ntohl(msg->created);
 	msg->turns_per_day = ntohl(msg->turns_per_day);
 	msg->turns_in_protection = ntohl(msg->turns_in_protection);
-	msg->game_id = ntohl(msg->game_id);
 }
 
 void dolog(char *fmt, ...) {
@@ -1868,6 +1864,7 @@ void perform_maintenance()
 	time_t timenow;
 	FILE *fptr, *fptr2;
 	int newnodenum;
+	uint32_t newgameid;
 	char message2[256];
 	int stage = 0;
 	timenow = time(NULL);
@@ -1884,14 +1881,6 @@ void perform_maintenance()
 			
 	 	    if (result == eSuccess) {
 				msg2he(&msg);
-				if (game_id == 0) {
-					game_id = msg.game_id;
-					fptr = fopen("game_id.dat", "wb");
-					if (fptr) {
-						fwrite(&game_id, sizeof(uint32_t), 1, fptr);
-						fclose(fptr);
-					}
-				}
 				if ((msg.turns_in_protection != turns_in_protection || msg.turns_per_day != turns_per_day) && msg.from != 1) {
 					fprintf(stderr, "Settings mismatch. Ignoring packet\n");
 					continue;
@@ -1925,10 +1914,6 @@ void perform_maintenance()
 			switch(msg.type) {
 			case 1:
 				// add score to database
-				if (game_id != msg.game_id) {
-					dolog("Got packet for incorrect game id, skipping");
-					break;
-				}
 				dolog("Got score file packet for player %s", msg.player_name);
 				rc = sqlite3_open("interbbs.db3", &db);
 				if (rc) {
@@ -1973,16 +1958,11 @@ void perform_maintenance()
 
 				break;
 			case 2:
-				if (game_id != msg.game_id) {
-					dolog("Got packet for incorrect game id, skipping");
-					break;
-				}			
 				dolog("Got invasion packet for: %s from: %s", msg.victim_name, msg.player_name);
 				// perform invasion
 				if (do_interbbs_battle(msg.victim_name, msg.player_name, msg.from, msg.troops, msg.generals, msg.fighters, &outboundmsg) == 0) {
 					outboundmsg.turns_in_protection = turns_in_protection;
 					outboundmsg.turns_per_day = turns_per_day;
-					outboundmsg.game_id = game_id;	
 					msg2ne(&outboundmsg);
 					IBSend(&InterBBSInfo, msg.from, &outboundmsg, sizeof(ibbsmsg_t));
 				} else {
@@ -1990,10 +1970,6 @@ void perform_maintenance()
 				}
 				break;
 			case 3:
-				if (game_id != msg.game_id) {
-					dolog("Got packet for incorrect game id, skipping");
-					break;
-				}			
 				// return troops
 				dolog("Got return troops packet for: %s", msg.player_name);
 				player = load_player_gn(msg.player_name);
@@ -2024,10 +2000,6 @@ void perform_maintenance()
 				break;
 			case 4:
 				// message
-				if (game_id != msg.game_id) {
-					dolog("Got packet for incorrect game id, skipping");
-					break;
-				}				
 				rc = sqlite3_open("interbbs.db3", &db);
 				if (rc) {
 					// Error opening the database
@@ -2051,11 +2023,7 @@ void perform_maintenance()
 				sqlite3_close(db);
 				break;
 			case 5:
-				// new node
-				if (game_id != msg.game_id) {
-					dolog("Got packet for incorrect game id, skipping");
-					break;
-				}				
+				// new node	
 				if (msg.from != 1) {
 					fprintf(stderr, "Received ADD/REMOVE from system not Node 1\n");
 					break;
@@ -2124,11 +2092,62 @@ void perform_maintenance()
 			case 6:
 				if (msg.from == 1) {
 					reset = 1;
-					game_id = msg.game_id;
 				} else {
 					fprintf(stderr, "Got reset message from someone not node 1, ignoring\n");
 				}
-				break;			
+				break;
+			case 7:
+				if (msg.from == 1) {
+					newgameid = atoi(msg.player_name);
+					fptr = fopen("BBS.CFG", "r");
+					if (!fptr) {
+						fprintf(stderr, "Unable to open BBS.CFG\n");
+						break;
+					}
+
+					fptr2 = fopen("BBS.CFG.BAK", "w");
+					if (!fptr2) {
+						fprintf(stderr, "Unable to open BBS.CFG.BAK\n");
+						break;
+					}
+					fgets(message, 256, fptr);
+					while (!feof(fptr)) {
+						fputs(message, fptr2);
+						fgets(message, 256, fptr);
+					}
+					fclose(fptr2);
+					fclose(fptr);
+
+					fptr = fopen("BBS.CFG.BAK", "r");
+					if (!fptr) {
+						fprintf(stderr, "Unable to open BBS.CFG.BAK\n");
+						break;
+					}
+
+					fptr2 = fopen("BBS.CFG", "w");
+					if (!fptr2) {
+						fprintf(stderr, "Unable to open BBS.CFG\n");
+						break;
+					}
+
+					fgets(message, 256, fptr);
+					while (!feof(fptr)) {
+						if (strncasecmp(message, "GameID", 6) == 0) {
+							fprintf(fptr2, "GameID %d\n", newgameid);
+						} else {
+							fputs(message, fptr2);
+						}
+						fgets(message, 256, fptr);
+					}
+					fclose(fptr2);
+					fclose(fptr);
+					unlink("BBS.CFG.BAK");
+
+
+				} else {
+					fprintf(stderr, "Got game id change from someone not node 1, ignoring\n");
+				}
+				break;		
 			default:
 				fprintf(stderr, "Unknown message type: %d\n", msg.type);
 				break;
@@ -2151,13 +2170,6 @@ void perform_maintenance()
 				perror("unlink ");
 			}
 			
-			fptr = fopen("game_id.dat", "wb");
-			if (!fptr) {
-				dolog("Could not open game_id.dat for writing!!\n");
-			} else {
-				fwrite(&game_id, sizeof(uint32_t), 1, fptr);
-				fclose(fptr);
-			}
 			exit(0);
 		}
 		fprintf(stderr, "Parsed %d inbound messages\nForwarded %d messages\n", i, k);
@@ -2206,8 +2218,7 @@ void perform_maintenance()
 					player->last_score = calculate_score(player);
 					save_player(player);
 					msg.turns_in_protection = turns_in_protection;
-					msg.turns_per_day = turns_per_day;
-					msg.game_id = game_id;				
+					msg.turns_per_day = turns_per_day;			
 					msg2ne(&msg);
 					IBSendAll(&InterBBSInfo, &msg, sizeof(ibbsmsg_t));
 				}
@@ -2366,8 +2377,7 @@ void game_loop(player_t *player)
 								msg.from = InterBBSInfo.myNode->nodeNumber;
 								msg.created = time(NULL);
 								msg.turns_in_protection = turns_in_protection;
-								msg.turns_per_day = turns_per_day;
-								msg.game_id = game_id;	
+								msg.turns_per_day = turns_per_day;	
 								msg2ne(&msg);
 								if (IBSend(&InterBBSInfo, addr, &msg, sizeof(ibbsmsg_t)) != eSuccess) {
 									od_printf("\r\nMessage failed to send.\r\n");
@@ -2974,8 +2984,7 @@ void game_loop(player_t *player)
 								}
 								// send message
 								msg.turns_in_protection = turns_in_protection;
-								msg.turns_per_day = turns_per_day;
-								msg.game_id = game_id;									
+								msg.turns_per_day = turns_per_day;									
 								msg2ne(&msg);
 								if (IBSend(&InterBBSInfo, addr, &msg, sizeof(ibbsmsg_t)) != eSuccess) {
 									player->troops += msg.troops;
@@ -3197,13 +3206,6 @@ int main(int argc, char **argv)
 		if (IBReadConfig(&InterBBSInfo, "BBS.CFG")!= eSuccess) {
 			interBBSMode = 0;
 		}
-		fptr = fopen("game_id.dat", "rb");
-		if (!fptr) {
-			game_id = 0;
-		} else {
-			fread(&game_id, sizeof(uint32_t), 1, fptr);
-			fclose(fptr);
-		}
 	}
 
 	if (stat("inuse.flg", &s) == 0) {
@@ -3227,15 +3229,6 @@ int main(int argc, char **argv)
 		}		
 	}
 	if (strcasecmp(lpszCmdLine, "reset") == 0) {
-		game_id = rand() % 0xFFFFFFFE + 1;
-		fptr = fopen("game_id.dat", "wb");
-		if (!fptr) {
-			fprintf(stderr, "Failed to open game_id.dat\n");
-			return -1;
-		}
-		
-		fwrite(&game_id, sizeof(uint32_t), 1, fptr);
-		fclose(fptr);
 				
 		memset(&msg, 0, sizeof(ibbsmsg_t));
 		msg.type = 6;
@@ -3243,7 +3236,6 @@ int main(int argc, char **argv)
 		msg.created = time(NULL);
 		msg.turns_per_day = turns_per_day;
 		msg.turns_in_protection = turns_in_protection;
-		msg.game_id = game_id;
 		msg2ne(&msg);
 		IBSendAll(&InterBBSInfo, &msg, sizeof(ibbsmsg_t));	
 		system("reset.bat");
@@ -3275,7 +3267,6 @@ int main(int argc, char **argv)
 			msg.created = time(NULL);
 			msg.turns_per_day = turns_per_day;
 			msg.turns_in_protection = turns_in_protection;
-			msg.game_id = game_id;	
 			msg2ne(&msg);
 			IBSendAll(&InterBBSInfo, &msg, sizeof(ibbsmsg_t));
 		}
@@ -3295,7 +3286,22 @@ int main(int argc, char **argv)
 			msg.created = time(NULL);
 			msg.turns_per_day = turns_per_day;
 			msg.turns_in_protection = turns_in_protection;
-			msg.game_id = game_id;	
+			msg2ne(&msg);
+			IBSendAll(&InterBBSInfo, &msg, sizeof(ibbsmsg_t));
+		}
+		return 0;
+	}	
+
+	if (strncasecmp(lpszCmdLine, "-GID", 4) == 0 || strncasecmp(lpszCmdLine, "/GID", 4) == 0) {
+		if (end - start < 255) {
+			newgameid = atoi(&lpszCmdLine[5]);
+
+			memset(&msg, 0, sizeof(ibbsmsg_t));
+
+			msg.type = 7;
+			msg.from = InterBBSInfo.myNode->nodeNumber;
+			sprintf(msg.player_name, "%d", newgameid);
+			msg.created = time(NULL);
 			msg2ne(&msg);
 			IBSendAll(&InterBBSInfo, &msg, sizeof(ibbsmsg_t));
 		}
@@ -3327,23 +3333,12 @@ int main(int argc, char **argv)
 	}
 
 	if (argc > 1 && strcasecmp(argv[1], "reset") == 0) {
-		game_id = rand() % 0xFFFFFFFE + 1;
-		fptr = fopen("game_id.dat", "wb");
-		if (!fptr) {
-			fprintf(stderr, "Failed to open game_id.dat\n");
-			return -1;
-		}
-		
-		fwrite(&game_id, sizeof(uint32_t), 1, fptr);
-		fclose(fptr);
-						
 		memset(&msg, 0, sizeof(ibbsmsg_t));
 		msg.type = 6;
 		msg.from = InterBBSInfo.myNode->nodeNumber;
 		msg.created = time(NULL);
 		msg.turns_per_day = turns_per_day;
 		msg.turns_in_protection = turns_in_protection;
-		msg.game_id = game_id;
 		msg2ne(&msg);
 		IBSendAll(&InterBBSInfo, &msg, sizeof(ibbsmsg_t));
 		system("./reset.sh");	
@@ -3361,7 +3356,6 @@ int main(int argc, char **argv)
 			msg.created = time(NULL);
 			msg.turns_per_day = turns_per_day;
 			msg.turns_in_protection = turns_in_protection;
-			msg.game_id = game_id;	
 			msg2ne(&msg);
 
 			printf("sending to all\n");
@@ -3379,11 +3373,24 @@ int main(int argc, char **argv)
 			msg.created = time(NULL);
 			msg.turns_per_day = turns_per_day;
 			msg.turns_in_protection = turns_in_protection;
-			msg.game_id = game_id;	
 			msg2ne(&msg);
 			IBSendAll(&InterBBSInfo, &msg, sizeof(ibbsmsg_t));
 			return 0;
 	}
+
+
+	if (argc > 1 && (strcasecmp(argv[1], "-GID") == 0 || strcasecmp(argv[1], "/GID") == 0)) {
+			memset(&msg, 0, sizeof(ibbsmsg_t));
+
+			msg.type = 7;
+			msg.from = InterBBSInfo.myNode->nodeNumber;
+			sprintf(msg.player_name, "%s", argv[2]);
+			msg.created = time(NULL);
+			msg2ne(&msg);
+			IBSendAll(&InterBBSInfo, &msg, sizeof(ibbsmsg_t));
+			return 0;
+	}
+
 
 	for (i=1;i<argc;i++) {
 		if (strcasecmp(argv[i], "/full") == 0 || strcasecmp(argv[i], "-full") == 0) {

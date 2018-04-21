@@ -16,11 +16,12 @@
 #include <arpa/inet.h>
 #endif // _MSC_VER
 
-#define NUM_KEYWORDS 3
+#define NUM_KEYWORDS 4
 
 char *apszKeyWord[NUM_KEYWORDS] = {"LinkNodeNumber",
                                    "LinkFileOutbox",
-                                   "LinkName"};
+                                   "LinkName",
+                                   "GameID"};
 
 
 
@@ -33,6 +34,7 @@ tIBResult ProcessFile(tIBInfo *pInfo, char *filename, void *pBuffer, int nBuffer
     int forward = 0;
     tIBResult result;
     uint32_t league;
+    uint32_t gameid;
 
     fptr = fopen(filename, "rb");
 
@@ -56,6 +58,15 @@ tIBResult ProcessFile(tIBInfo *pInfo, char *filename, void *pBuffer, int nBuffer
     if (destination != pInfo->myNode->nodeNumber) {
         forward = 1;
     }
+
+    fread(&gameid, 1, sizeof(uint32_t), fptr);
+    gameid = ntohl(gameid);
+
+    if (pInfo->game_id == 0 || pInfo->game_id != gameid) {
+        fprintf(stderr, "Game id %d does not equal packet game id %d (or is 0)\n", pInfo->game_id, gameid);
+        return eBadParameter;
+    }
+
     fread(&memsize, sizeof(uint32_t), 1, fptr);
     memsize = ntohl(memsize);
 
@@ -182,9 +193,11 @@ tIBResult IBSend(tIBInfo *pInfo, int pszDestNode, void *pBuffer, uint32_t nBuffe
     uint32_t nwNbufferSize = htonl(nBufferSize);
     uint32_t leagueno = htonl(pInfo->league);
     uint32_t destn = htonl(pszDestNode);
+    uint32_t gameid = htonl(pInfo->game_id);
     fwrite(VERSION, 5, 1, fptr);
     fwrite(&leagueno, sizeof(uint32_t), 1, fptr);
     fwrite(&destn, sizeof(uint32_t), 1, fptr);
+    fwrite(&gameid, sizeof(uint32_t), 1, fptr);
     fwrite(&nwNbufferSize, sizeof(uint32_t), 1, fptr);
     fwrite(pBuffer, nBufferSize, 1, fptr);
     fclose(fptr);
@@ -255,7 +268,10 @@ void ProcessConfigLine(int nKeyword, char *pszParameter, void *pCallbackData)
             pInfo->otherNodes[pInfo->otherNodeCount - 1]->name[SYSTEM_NAME_CHARS] = '\0';
             
             }
-         break;        
+         break;
+       case 3:
+          pInfo->game_id = atoi(pszParameter);
+          break;
       }
    }
 

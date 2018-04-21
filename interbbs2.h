@@ -2,7 +2,7 @@
 #define __IBBS_2
 
 #define FILEEXT "GAL"
-#define VERSION "00009"
+#define VERSION "00010"
 
 #ifdef WIN32
 #define _MSC_VER 1
@@ -46,6 +46,7 @@ typedef struct {
 
 typedef struct {
     uint32_t league;
+    uint32_t game_id;
     char defaultFilebox[PATH_MAX + 1];
     tOtherNode *myNode;
     tOtherNode **otherNodes;
