@@ -18,7 +18,7 @@
 #include "inih/ini.h"
 
 #define VERSION_MAJOR 0
-#define VERSION_MINOR 4
+#define VERSION_MINOR 5
 #define VERSION_MICRO 0
 
 #ifndef VERSION_TYPE
@@ -254,6 +254,61 @@ int lua_getCredits(lua_State *L) {
 	return 1;
 }
 
+int lua_getPlanets(lua_State *L) {
+	lua_pushnumber(L, gPlayer->planets_food + gPlayer->planets_industrial + gPlayer->planets_military + gPlayer->planets_ore + gPlayer->planets_urban);
+	return 1;
+}
+
+int lua_inProtection(lua_State *L) {
+	lua_pushnumber(L, turns_in_protection > gPlayer->total_turns);
+	return 1;
+}
+
+int lua_destroyPlanets(lua_State *L) {
+	uint32_t count = lua_tonumber(L, -1);
+	uint32_t total = 0;
+	if (gPlayer->planets_food - count / 5 < 0) {
+		total += gPlayer->planets_food;
+		gPlayer->planets_food = 0;
+	} else {
+		total += count / 5;
+		gPlayer->planets_food -= count / 5;
+	}
+
+	if (gPlayer->planets_military - count / 5 < 0) {
+		total += gPlayer->planets_military;
+		gPlayer->planets_military = 0;
+	} else {
+		total += count / 5;
+		gPlayer->planets_military -= count / 5;
+	}
+	if (gPlayer->planets_urban - count / 5 < 0) {
+		total += gPlayer->planets_urban;
+		gPlayer->planets_urban = 0;
+	} else {
+		total += count / 5;
+		gPlayer->planets_urban-= count / 5;
+	}
+	if (gPlayer->planets_ore - count / 5 < 0) {
+		total += gPlayer->planets_ore;
+		gPlayer->planets_ore = 0;
+	} else {
+		total += count / 5;
+		gPlayer->planets_ore -= count / 5;
+	}
+	if (gPlayer->planets_industrial - count / 5 < 0) {
+		total += gPlayer->planets_industrial;
+		gPlayer->planets_industrial = 0;
+	} else {
+		total += count / 5;
+		gPlayer->planets_industrial -= count / 5;
+	}
+
+	lua_pushnumber(L, total);
+
+	return 1;
+}
+
 int lua_setTroops(lua_State *L) {
 	gPlayer->troops = lua_tonumber(L, -1);
 	return 0;
@@ -291,6 +346,11 @@ int lua_setFood(lua_State *L) {
 
 int lua_setCredits(lua_State *L) {
 	gPlayer->credits = lua_tonumber(L, -1);
+	return 0;
+}
+
+int lua_printRed(lua_State *L) {
+	od_printf("`bright red`%s`white`\r\n", (char *)lua_tostring(L, -1));
 	return 0;
 }
 
@@ -3146,6 +3206,14 @@ void lua_push_cfunctions(lua_State *L) {
     lua_setglobal(L, "gd_print_yellow");
 	lua_pushcfunction(L, lua_printGreen);
     lua_setglobal(L, "gd_print_green");	
+	lua_pushcfunction(L, lua_printRed);
+	lua_setglobal(L, "gd_print_red");
+	lua_pushcfunction(L, lua_getPlanets);
+	lua_setglobal(L, "gd_get_planets");
+	lua_pushcfunction(L, lua_destroyPlanets);
+	lua_setglobal(L, "gd_destroy_planets");
+	lua_pushcfunction(L, lua_inProtection);
+	lua_setglobal(L, "gd_in_protection");
 }
 
 #if _MSC_VER
