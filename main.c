@@ -2314,7 +2314,7 @@ void game_loop(player_t *player)
 
 	player_t *victim;
 
-	int i;
+	int64_t i;
 	int j;
 	char c;
 
@@ -2721,7 +2721,7 @@ void game_loop(player_t *player)
 									od_printf("\r\n\r\nHow much would you like to withdraw (0 - %u credits) ? ", player->bank_balance + ((calculate_score(player) * 100) / 2));
 									od_input_str(buffer, 10, '0', '9');
 									if (strlen(buffer) != 0) {
-										i = atoi(buffer);
+										i = strtoll(buffer, NULL, 10);
 										if (i > player->bank_balance + ((calculate_score(player) * 100) / 2)) {
 											od_printf("\r\n`bright red`You don't have that many credits!`white`\r\n");
 										} else {
